@@ -24,6 +24,7 @@ import SignMessage from './sign/index.js'
 import ServerSelectView from './configuration/select-server-view'
 import UserDataReview from './user-data-review'
 import RecentProfiles from './recent-profiles'
+import RecentPosts from './posts'
 
 function AppBody (props) {
   // Dependency injection through props
@@ -38,6 +39,7 @@ function AppBody (props) {
         <Route path='/wallet' element={<Wallet appData={appData} />} />
         <Route path='/slp-tokens' element={<SlpTokens appData={appData} />} />
         <Route path='/profile/recent' element={<RecentProfiles />} />
+        <Route path='/posts/recent' element={<RecentPosts />} />
         <Route path='/placeholder2' element={<Placeholder2 />} />
         <Route path='/placeholder3' element={<Placeholder3 />} />
         <Route path='/servers' element={<ServerSelectView appData={appData} />} />

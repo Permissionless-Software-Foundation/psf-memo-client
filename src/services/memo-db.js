@@ -22,6 +22,19 @@ class MemoDb {
       throw err
     }
   }
+
+  async getRecentPosts ({ limit = 100, offset = 0 } = {}) {
+    try {
+      const result = await this.axios.get(`${config.backend}/posts/recent`, {
+        params: { limit, offset }
+      })
+
+      return result.data
+    } catch (err) {
+      console.error('Error in getRecentPosts()')
+      throw err
+    }
+  }
 }
 
 export default MemoDb
