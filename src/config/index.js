@@ -12,7 +12,9 @@ const config = {
   // Backup Info that goes into the Footer.
   ghPagesUrl: 'https://permissionless-software-foundation.github.io/react-bootstrap-web3-spa/',
   ghRepo: 'https://github.com/Permissionless-Software-Foundation/bch-wallet-web3-spa',
-  radicleUrl: 'https://app.radicle.network/seeds/maple.radicle.garden/rad:git:hnrkd5cjwwb5tzx37hq9uqm5ubon7ee468xcy/remotes/hyyycncbn9qzqmobnhjq9rry6t4mbjiadzjoyhaknzxjcz3cxkpfpc'
+  radicleUrl: 'https://app.radicle.network/seeds/maple.radicle.garden/rad:git:hnrkd5cjwwb5tzx37hq9uqm5ubon7ee468xcy/remotes/hyyycncbn9qzqmobnhjq9rry6t4mbjiadzjoyhaknzxjcz3cxkpfpc',
+
+  backend: 'http://localhost:5021'
 
 }
 
