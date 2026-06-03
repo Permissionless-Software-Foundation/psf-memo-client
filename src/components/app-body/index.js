@@ -25,6 +25,7 @@ import ServerSelectView from './configuration/select-server-view'
 import UserDataReview from './user-data-review'
 import RecentProfiles from './recent-profiles'
 import RecentPosts from './posts'
+import Profile from './profile'
 
 function AppBody (props) {
   // Dependency injection through props
@@ -39,6 +40,7 @@ function AppBody (props) {
         <Route path='/wallet' element={<Wallet appData={appData} />} />
         <Route path='/slp-tokens' element={<SlpTokens appData={appData} />} />
         <Route path='/profile/recent' element={<RecentProfiles />} />
+        <Route path='/profile/:addr' element={<Profile />} />
         <Route path='/posts/recent' element={<RecentPosts />} />
         <Route path='/placeholder2' element={<Placeholder2 />} />
         <Route path='/placeholder3' element={<Placeholder3 />} />

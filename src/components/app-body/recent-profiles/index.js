@@ -2,13 +2,16 @@
   Display the most recent Memo profiles from psf-memo-db.
 */
 
-// Global npm libraries
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { Container, Row, Col, Spinner, Table } from 'react-bootstrap'
 
 // Local libraries
 import MemoDb from '../../../services/memo-db'
+import AppUtil from '../../../util'
 import '../../../App.css'
+
+const appUtil = new AppUtil()
 
 function truncate (str, maxLen = 16) {
   if (!str || str.length <= maxLen) return str
@@ -73,22 +76,30 @@ function RecentProfiles () {
                   <th>Bio</th>
                   <th>Block</th>
                   <th>Seen</th>
-                  <th>TxID</th>
+                  <th>TXID</th>
                 </tr>
               </thead>
               <tbody>
                 {profiles.map((profile) => (
                   <tr key={`${profile.addr}-${profile.txid}`}>
                     <td>
-                      <span style={{ fontFamily: 'monospace' }} title={profile.addr}>
+                      <Link
+                        to={`/profile/${encodeURIComponent(profile.addr)}`}
+                        style={{ fontFamily: 'monospace' }}
+                        title={profile.addr}
+                      >
                         {truncate(profile.addr, 24)}
-                      </span>
+                      </Link>
                     </td>
                     <td>{profile.text}</td>
                     <td>{profile.blockHeight}</td>
                     <td>{formatSeen(profile.seen)}</td>
                     <td>
-                      <span style={{ fontFamily: 'monospace' }} title={profile.txid}>
+                      <span
+                        style={{ fontFamily: 'monospace', cursor: 'pointer' }}
+                        title={profile.txid}
+                        onClick={() => appUtil.copyToClipboard(profile.txid)}
+                      >
                         {truncate(profile.txid, 20)}
                       </span>
                     </td>

@@ -8,7 +8,10 @@ import { Container, Row, Col, Spinner, Table } from 'react-bootstrap'
 
 // Local libraries
 import MemoDb from '../../../services/memo-db'
+import AppUtil from '../../../util'
 import '../../../App.css'
+
+const appUtil = new AppUtil()
 
 function truncate (str, maxLen = 16) {
   if (!str || str.length <= maxLen) return str
@@ -73,7 +76,7 @@ function RecentPosts () {
                   <th>Post</th>
                   <th>Block</th>
                   <th>Seen</th>
-                  <th>TxID</th>
+                  <th>TXID</th>
                 </tr>
               </thead>
               <tbody>
@@ -88,7 +91,11 @@ function RecentPosts () {
                     <td>{post.blockHeight}</td>
                     <td>{formatSeen(post.seen)}</td>
                     <td>
-                      <span style={{ fontFamily: 'monospace' }} title={post.txid}>
+                      <span
+                        style={{ fontFamily: 'monospace', cursor: 'pointer' }}
+                        title={post.txid}
+                        onClick={() => appUtil.copyToClipboard(post.txid)}
+                      >
                         {truncate(post.txid, 20)}
                       </span>
                     </td>

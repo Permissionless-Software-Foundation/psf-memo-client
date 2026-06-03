@@ -35,6 +35,50 @@ class MemoDb {
       throw err
     }
   }
+
+  async getProfile (addr) {
+    try {
+      const result = await this.axios.get(
+        `${config.backend}/level/profile/${encodeURIComponent(addr)}`
+      )
+      return result.data
+    } catch (err) {
+      if (err.response && err.response.status === 404) {
+        return null
+      }
+      console.error('Error in getProfile()')
+      throw err
+    }
+  }
+
+  async getProfilePic (addr) {
+    try {
+      const result = await this.axios.get(
+        `${config.backend}/level/profilepic/${encodeURIComponent(addr)}`
+      )
+      return result.data
+    } catch (err) {
+      if (err.response && err.response.status === 404) {
+        return null
+      }
+      console.error('Error in getProfilePic()')
+      throw err
+    }
+  }
+
+  async getPostsByAddr (addr, { limit = 100, offset = 0 } = {}) {
+    try {
+      const result = await this.axios.get(
+        `${config.backend}/posts/by/${encodeURIComponent(addr)}`,
+        { params: { limit, offset } }
+      )
+
+      return result.data
+    } catch (err) {
+      console.error('Error in getPostsByAddr()')
+      throw err
+    }
+  }
 }
 
 export default MemoDb
