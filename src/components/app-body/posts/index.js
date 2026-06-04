@@ -4,6 +4,7 @@
 
 // Global npm libraries
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { Container, Row, Col, Spinner, Table } from 'react-bootstrap'
 
 // Local libraries
@@ -83,9 +84,13 @@ function RecentPosts () {
                 {posts.map((post) => (
                   <tr key={post.txid}>
                     <td>
-                      <span style={{ fontFamily: 'monospace' }} title={post.addr}>
+                      <Link
+                        to={`/profile/${encodeURIComponent(post.addr)}`}
+                        style={{ fontFamily: 'monospace' }}
+                        title={post.addr}
+                      >
                         {truncate(post.addr, 24)}
-                      </span>
+                      </Link>
                     </td>
                     <td>{post.text}</td>
                     <td>{post.blockHeight}</td>
