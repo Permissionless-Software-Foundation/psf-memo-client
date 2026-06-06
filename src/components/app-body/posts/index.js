@@ -10,6 +10,7 @@ import { Container, Row, Col, Spinner, Table } from 'react-bootstrap'
 // Local libraries
 import MemoDb from '../../../services/memo-db'
 import AppUtil from '../../../util'
+import PostReplyCount from '../../post-reply-count'
 import '../../../App.css'
 
 const appUtil = new AppUtil()
@@ -92,7 +93,10 @@ function RecentPosts () {
                         {truncate(post.addr, 24)}
                       </Link>
                     </td>
-                    <td>{post.text}</td>
+                    <td>
+                      <div>{post.text}</div>
+                      <PostReplyCount count={post.replyCount ?? 0} />
+                    </td>
                     <td>{post.blockHeight}</td>
                     <td>{formatSeen(post.seen)}</td>
                     <td>

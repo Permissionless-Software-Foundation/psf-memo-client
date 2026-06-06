@@ -8,6 +8,7 @@ import { Container, Row, Col, Spinner, Card } from 'react-bootstrap'
 import Jdenticon from '@chris.troutner/react-jdenticon'
 
 import MemoDb from '../../../services/memo-db'
+import PostReplyCount from '../../post-reply-count'
 import '../../../App.css'
 import './profile.css'
 
@@ -137,6 +138,7 @@ function Profile () {
                     <span className='profile-post-block ms-2'>Block {post.blockHeight}</span>
                   </div>
                   <Card.Text className='profile-post-text'>{post.text}</Card.Text>
+                  <PostReplyCount count={post.replyCount ?? 0} />
                 </Card.Body>
               </Card>
             ))}
