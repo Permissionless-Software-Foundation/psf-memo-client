@@ -79,6 +79,19 @@ class MemoDb {
       throw err
     }
   }
+
+  async getPostThread (txid) {
+    try {
+      const result = await this.axios.get(
+        `${config.backend}/posts/${encodeURIComponent(txid)}/thread`
+      )
+
+      return result.data
+    } catch (err) {
+      console.error('Error in getPostThread()')
+      throw err
+    }
+  }
 }
 
 export default MemoDb

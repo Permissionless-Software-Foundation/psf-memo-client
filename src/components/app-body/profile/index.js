@@ -9,6 +9,7 @@ import Jdenticon from '@chris.troutner/react-jdenticon'
 
 import MemoDb from '../../../services/memo-db'
 import PostReplyCount from '../../post-reply-count'
+import PostThreadModal from '../../post-thread-modal'
 import '../../../App.css'
 import './profile.css'
 
@@ -53,6 +54,18 @@ function Profile () {
   const [profilePicUrl, setProfilePicUrl] = useState(null)
   const [posts, setPosts] = useState([])
   const [pagination, setPagination] = useState(null)
+  const [threadTxid, setThreadTxid] = useState(null)
+  const [showThreadModal, setShowThreadModal] = useState(false)
+
+  const openThread = (txid) => {
+    setThreadTxid(txid)
+    setShowThreadModal(true)
+  }
+
+  const closeThread = () => {
+    setShowThreadModal(false)
+    setThreadTxid(null)
+  }
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -138,13 +151,22 @@ function Profile () {
                     <span className='profile-post-block ms-2'>Block {post.blockHeight}</span>
                   </div>
                   <Card.Text className='profile-post-text'>{post.text}</Card.Text>
-                  <PostReplyCount count={post.replyCount ?? 0} />
+                  <PostReplyCount
+                    count={post.replyCount ?? 0}
+                    onClick={() => openThread(post.txid)}
+                  />
                 </Card.Body>
               </Card>
             ))}
           </Col>
         </Row>
       )}
+
+      <PostThreadModal
+        show={showThreadModal}
+        txid={threadTxid}
+        onHide={closeThread}
+      />
     </Container>
   )
 }

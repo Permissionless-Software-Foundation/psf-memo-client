@@ -10,3 +10,11 @@
 .post-reply-count-icon {
   font-size: 0.9rem;
 }
+
+.post-reply-count-clickable {
+  cursor: pointer;
+}
+
+.post-reply-count-clickable:hover {
+  color: #28a745;
+}

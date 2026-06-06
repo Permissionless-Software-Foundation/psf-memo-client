@@ -11,6 +11,7 @@ import { Container, Row, Col, Spinner, Table, Button } from 'react-bootstrap'
 import MemoDb from '../../../services/memo-db'
 import AppUtil from '../../../util'
 import PostReplyCount from '../../post-reply-count'
+import PostThreadModal from '../../post-thread-modal'
 import '../../../App.css'
 
 const appUtil = new AppUtil()
@@ -34,6 +35,18 @@ function RecentPosts () {
   const [posts, setPosts] = useState([])
   const [pagination, setPagination] = useState(null)
   const [offset, setOffset] = useState(0)
+  const [threadTxid, setThreadTxid] = useState(null)
+  const [showThreadModal, setShowThreadModal] = useState(false)
+
+  const openThread = (txid) => {
+    setThreadTxid(txid)
+    setShowThreadModal(true)
+  }
+
+  const closeThread = () => {
+    setShowThreadModal(false)
+    setThreadTxid(null)
+  }
 
   useEffect(() => {
     const loadPosts = async () => {
@@ -117,7 +130,10 @@ function RecentPosts () {
                     </td>
                     <td>
                       <div>{post.text}</div>
-                      <PostReplyCount count={post.replyCount ?? 0} />
+                      <PostReplyCount
+                        count={post.replyCount ?? 0}
+                        onClick={() => openThread(post.txid)}
+                      />
                     </td>
                     <td>{post.blockHeight}</td>
                     <td>{formatSeen(post.seen)}</td>
@@ -156,6 +172,12 @@ function RecentPosts () {
           )}
         </Col>
       </Row>
+
+      <PostThreadModal
+        show={showThreadModal}
+        txid={threadTxid}
+        onHide={closeThread}
+      />
     </Container>
   )
 }
