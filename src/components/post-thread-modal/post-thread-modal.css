@@ -22,22 +22,57 @@
 }
 
 .post-thread-node-header {
-  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   margin-bottom: 0.5rem;
 }
 
+.post-thread-avatar {
+  flex-shrink: 0;
+  border-radius: 4px;
+  object-fit: cover;
+  display: block;
+}
+
+.post-thread-avatar-jdenticon {
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.post-thread-node-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: #6c757d;
+  min-width: 0;
+}
+
 .post-thread-node-author {
-  font-family: monospace;
-  font-size: 0.8rem;
+  font-weight: 600;
+  color: #212529;
   text-decoration: none;
 }
 
 .post-thread-node-author:hover {
   text-decoration: underline;
+  color: #28a745;
+}
+
+.post-thread-node-author-address {
+  font-family: monospace;
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 
 .post-thread-node-replied {
   font-style: italic;
+}
+
+.post-thread-node-seen {
+  white-space: nowrap;
 }
 
 .post-thread-node-text {

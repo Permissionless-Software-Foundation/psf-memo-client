@@ -7,12 +7,14 @@ import { Modal, Spinner } from 'react-bootstrap'
 
 import MemoDb from '../../services/memo-db'
 import PostThreadNode from './post-thread-node'
+import { collectThreadAddrs, loadThreadProfiles } from './thread-profiles'
 import './post-thread-modal.css'
 
 function PostThreadModal ({ show, txid, onHide }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [thread, setThread] = useState(null)
+  const [profiles, setProfiles] = useState({})
 
   useEffect(() => {
     if (!show || !txid) {
@@ -25,12 +27,24 @@ function PostThreadModal ({ show, txid, onHide }) {
       setLoading(true)
       setError(null)
       setThread(null)
+      setProfiles({})
 
       try {
         const memoDb = new MemoDb()
         const data = await memoDb.getPostThread(txid)
-        if (!cancelled) {
-          setThread(data.post || null)
+        const post = data.post || null
+
+        if (cancelled) return
+
+        if (post) {
+          const addrs = collectThreadAddrs(post)
+          const profileMap = await loadThreadProfiles(addrs, memoDb)
+          if (!cancelled) {
+            setThread(post)
+            setProfiles(profileMap)
+          }
+        } else if (!cancelled) {
+          setThread(null)
         }
       } catch (err) {
         if (!cancelled) {
@@ -53,6 +67,7 @@ function PostThreadModal ({ show, txid, onHide }) {
 
   const handleHide = () => {
     setThread(null)
+    setProfiles({})
     setError(null)
     onHide()
   }
@@ -76,7 +91,7 @@ function PostThreadModal ({ show, txid, onHide }) {
         )}
 
         {!loading && !error && thread && (
-          <PostThreadNode post={thread} isRoot />
+          <PostThreadNode post={thread} profiles={profiles} isRoot />
         )}
       </Modal.Body>
     </Modal>

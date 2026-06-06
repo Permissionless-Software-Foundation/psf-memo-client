@@ -66,6 +66,21 @@ class MemoDb {
     }
   }
 
+  async getName (addr) {
+    try {
+      const result = await this.axios.get(
+        `${config.backend}/level/name/${encodeURIComponent(addr)}`
+      )
+      return result.data
+    } catch (err) {
+      if (err.response && err.response.status === 404) {
+        return null
+      }
+      console.error('Error in getName()')
+      throw err
+    }
+  }
+
   async getPostsByAddr (addr, { limit = 100, offset = 0 } = {}) {
     try {
       const result = await this.axios.get(
