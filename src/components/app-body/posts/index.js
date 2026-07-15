@@ -4,35 +4,26 @@
 
 // Global npm libraries
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { Container, Row, Col, Spinner, Table, Button } from 'react-bootstrap'
+import { Container, Row, Col, Spinner, Button } from 'react-bootstrap'
 
 // Local libraries
 import MemoDb from '../../../services/memo-db'
-import AppUtil from '../../../util'
-import PostReplyCount from '../../post-reply-count'
+import PostFeedItem from '../../post-feed/post-feed-item'
 import PostThreadModal from '../../post-thread-modal'
+import {
+  collectPostAddrs,
+  loadThreadProfiles
+} from '../../post-thread-modal/thread-profiles'
 import '../../../App.css'
+import '../../post-feed/post-feed.css'
 
-const appUtil = new AppUtil()
 const PAGE_SIZE = 100
-
-function truncate (str, maxLen = 16) {
-  if (!str || str.length <= maxLen) return str
-  const half = Math.floor((maxLen - 3) / 2)
-  return `${str.slice(0, half)}...${str.slice(-half)}`
-}
-
-function formatSeen (seen) {
-  if (!seen) return ''
-  const ms = seen > 1e12 ? seen : seen * 1000
-  return new Date(ms).toLocaleString()
-}
 
 function RecentPosts () {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [posts, setPosts] = useState([])
+  const [profiles, setProfiles] = useState({})
   const [pagination, setPagination] = useState(null)
   const [offset, setOffset] = useState(0)
   const [threadTxid, setThreadTxid] = useState(null)
@@ -52,15 +43,22 @@ function RecentPosts () {
     const loadPosts = async () => {
       setLoading(true)
       setError(null)
+      setProfiles({})
 
       try {
         const memoDb = new MemoDb()
         const data = await memoDb.getRecentPosts({ limit: PAGE_SIZE, offset })
-        setPosts(data.posts || [])
+        const loadedPosts = data.posts || []
+        const addrs = collectPostAddrs(loadedPosts)
+        const profileMap = await loadThreadProfiles(addrs, memoDb)
+
+        setPosts(loadedPosts)
+        setProfiles(profileMap)
         setPagination(data.pagination || null)
       } catch (err) {
         setError(err.message || 'Failed to load recent posts')
         setPosts([])
+        setProfiles({})
         setPagination(null)
       }
 
@@ -105,51 +103,18 @@ function RecentPosts () {
             </div>
           )}
 
-          {!loading && !error && (
-            <Table striped bordered hover responsive className='mt-3'>
-              <thead>
-                <tr>
-                  <th>Address</th>
-                  <th>Post</th>
-                  <th>Block</th>
-                  <th>Seen</th>
-                  <th>TXID</th>
-                </tr>
-              </thead>
-              <tbody>
-                {posts.map((post) => (
-                  <tr key={post.txid}>
-                    <td>
-                      <Link
-                        to={`/profile/${encodeURIComponent(post.addr)}`}
-                        style={{ fontFamily: 'monospace' }}
-                        title={post.addr}
-                      >
-                        {truncate(post.addr, 24)}
-                      </Link>
-                    </td>
-                    <td>
-                      <div>{post.text}</div>
-                      <PostReplyCount
-                        count={post.replyCount ?? 0}
-                        onClick={() => openThread(post.txid)}
-                      />
-                    </td>
-                    <td>{post.blockHeight}</td>
-                    <td>{formatSeen(post.seen)}</td>
-                    <td>
-                      <span
-                        style={{ fontFamily: 'monospace', cursor: 'pointer' }}
-                        title={post.txid}
-                        onClick={() => appUtil.copyToClipboard(post.txid)}
-                      >
-                        {truncate(post.txid, 20)}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+          {!loading && !error && posts.length > 0 && (
+            <div className='posts-feed mt-3'>
+              {posts.map((post) => (
+                <PostFeedItem
+                  key={post.txid}
+                  post={post}
+                  profiles={profiles}
+                  onReplyClick={() => openThread(post.txid)}
+                  showFooterMeta
+                />
+              ))}
+            </div>
           )}
 
           {!loading && !error && (pagination || offset > 0) && (

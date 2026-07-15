@@ -9,6 +9,7 @@ import MemoDb from '../../services/memo-db'
 import PostThreadNode from './post-thread-node'
 import { collectThreadAddrs, loadThreadProfiles } from './thread-profiles'
 import './post-thread-modal.css'
+import '../post-feed/post-feed.css'
 
 function PostThreadModal ({ show, txid, onHide }) {
   const [loading, setLoading] = useState(false)

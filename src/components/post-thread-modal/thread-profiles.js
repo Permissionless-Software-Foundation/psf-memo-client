@@ -2,6 +2,10 @@
   Helpers for loading display names and avatars for thread participants.
 */
 
+export function collectPostAddrs (posts) {
+  return [...new Set((posts || []).map((post) => post.addr).filter(Boolean))]
+}
+
 export function collectThreadAddrs (post) {
   const addrs = new Set()
 
