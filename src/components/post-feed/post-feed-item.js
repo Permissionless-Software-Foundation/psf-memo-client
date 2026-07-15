@@ -1,5 +1,5 @@
 /*
-  Single post row for feed and thread views.
+  Instagram-style post card for feed and thread views.
 */
 
 import React from 'react'
@@ -30,32 +30,92 @@ function PostFeedItem ({
   if (!post) return null
 
   const displayName = getDisplayName(post.addr, profiles)
-  const hasCustomName = Boolean(profile.name ?? profiles?.[post.addr]?.name)
+
+  const hasCustomName = Boolean(
+    profile.name ?? profiles?.[post.addr]?.name
+  )
+
+  const profilePicUrl =
+    profile.profilePicUrl ??
+    profiles?.[post.addr]?.profilePicUrl
+
   const Wrapper = embedded ? 'div' : 'article'
 
+  const copyTxid = () => {
+    if (!post.txid) return
+    appUtil.copyToClipboard(post.txid)
+  }
+
   return (
-    <Wrapper className={`posts-feed-item${embedded ? ' posts-feed-item-embedded' : ''}`}>
-      <div className='posts-feed-item-header'>
-        <PostThreadAvatar
-          addr={post.addr}
-          profilePicUrl={profile.profilePicUrl ?? profiles?.[post.addr]?.profilePicUrl}
-        />
+    <Wrapper
+      className={[
+        'posts-feed-item',
+        embedded ? 'posts-feed-item-embedded' : ''
+      ].filter(Boolean).join(' ')}
+    >
+      <header className='posts-feed-item-header'>
+        <Link
+          to={`/profile/${encodeURIComponent(post.addr)}`}
+          className='posts-feed-item-avatar-link'
+          aria-label={`View ${displayName}'s profile`}
+        >
+          <PostThreadAvatar
+            addr={post.addr}
+            profilePicUrl={profilePicUrl}
+          />
+        </Link>
+
         <div className='posts-feed-item-meta'>
+          <div className='posts-feed-item-author-row'>
+            <Link
+              to={`/profile/${encodeURIComponent(post.addr)}`}
+              className={[
+                'posts-feed-item-author',
+                hasCustomName
+                  ? ''
+                  : 'posts-feed-item-author-address'
+              ].filter(Boolean).join(' ')}
+              title={post.addr}
+            >
+              {displayName}
+            </Link>
+
+            {showRepliedLabel && (
+              <span className='posts-feed-item-replied'>
+                replied
+              </span>
+            )}
+          </div>
+
+          <span className='posts-feed-item-seen'>
+            {formatRelativeSeen(post.seen)}
+          </span>
+        </div>
+
+        <button
+          type='button'
+          className='posts-feed-item-menu'
+          aria-label='Post options'
+          title='Post options'
+        >
+          <span aria-hidden='true'>•••</span>
+        </button>
+      </header>
+
+      <div className='posts-feed-item-content'>
+        <p className='posts-feed-item-text'>
           <Link
             to={`/profile/${encodeURIComponent(post.addr)}`}
-            className={`posts-feed-item-author${hasCustomName ? '' : ' posts-feed-item-author-address'}`}
-            title={post.addr}
+            className='posts-feed-item-inline-author'
           >
             {displayName}
           </Link>
-          {showRepliedLabel && (
-            <span className='posts-feed-item-replied'>replied</span>
-          )}
-          <span className='posts-feed-item-seen'>{formatRelativeSeen(post.seen)}</span>
-        </div>
-      </div>
 
-      <div className='posts-feed-item-text'>{post.text}</div>
+          {' '}
+
+          {post.text}
+        </p>
+      </div>
 
       {showReplyCount && (
         <div className='posts-feed-item-actions'>
@@ -67,25 +127,25 @@ function PostFeedItem ({
       )}
 
       {showFooterMeta && (
-        <div className='posts-feed-item-footer'>
+        <footer className='posts-feed-item-footer'>
           <span>Block {post.blockHeight}</span>
-          <span className='posts-feed-item-footer-separator'>·</span>
+
           <span
+            className='posts-feed-item-footer-separator'
+            aria-hidden='true'
+          >
+            ·
+          </span>
+
+          <button
+            type='button'
             className='posts-feed-item-txid'
             title={post.txid}
-            onClick={() => appUtil.copyToClipboard(post.txid)}
-            role='button'
-            tabIndex={0}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault()
-                appUtil.copyToClipboard(post.txid)
-              }
-            }}
+            onClick={copyTxid}
           >
             {truncateTxid(post.txid, 20)}
-          </span>
-        </div>
+          </button>
+        </footer>
       )}
     </Wrapper>
   )

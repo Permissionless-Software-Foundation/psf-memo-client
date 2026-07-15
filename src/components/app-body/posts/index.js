@@ -47,7 +47,11 @@ function RecentPosts () {
 
       try {
         const memoDb = new MemoDb()
-        const data = await memoDb.getRecentPosts({ limit: PAGE_SIZE, offset })
+        const data = await memoDb.getRecentPosts({
+          limit: PAGE_SIZE,
+          offset
+        })
+
         const loadedPosts = data.posts || []
         const addrs = collectPostAddrs(loadedPosts)
         const profileMap = await loadThreadProfiles(addrs, memoDb)
@@ -80,31 +84,47 @@ function RecentPosts () {
   }
 
   return (
-    <Container>
-      <Row>
-        <Col>
-          <h1 className='mt-4'>Recent Posts</h1>
-          {pagination && posts.length > 0 && (
-            <p className='text-muted'>
-              Showing {pagination.offset + 1}–{pagination.offset + posts.length} of {pagination.total} posts
+    <Container className='recent-posts-page'>
+      <Row className='justify-content-center'>
+        <Col lg={8} md={10} xs={12}>
+          <header className='recent-posts-heading'>
+            <h1>BCH Memo Posts</h1>
+            <p>
+              Recent messages published through the Memo protocol on Bitcoin Cash.
+            </p>
+
+            {pagination && posts.length > 0 && (
+              <span className='recent-posts-count'>
+                Showing {pagination.offset + 1}–
+                {pagination.offset + posts.length} of {pagination.total}
+              </span>
+            )}
+
+            {pagination && posts.length === 0 && (
+              <span className='recent-posts-count'>
+                No posts on this page.
+              </span>
+            )}
+          </header>
+
+          {error && (
+            <p className='recent-posts-error'>
+              {error}
             </p>
           )}
-          {pagination && posts.length === 0 && (
-            <p className='text-muted'>No posts on this page.</p>
-          )}
-
-          {error && <p className='text-danger'>{error}</p>}
 
           {loading && (
             <div className='text-center my-5'>
-              <Spinner animation='border' role='status' variant='primary'>
-                <span className='visually-hidden'>Loading...</span>
+              <Spinner animation='border' role='status'>
+                <span className='visually-hidden'>
+                  Loading...
+                </span>
               </Spinner>
             </div>
           )}
 
           {!loading && !error && posts.length > 0 && (
-            <div className='posts-feed mt-3'>
+            <div className='posts-feed'>
               {posts.map((post) => (
                 <PostFeedItem
                   key={post.txid}
@@ -118,16 +138,17 @@ function RecentPosts () {
           )}
 
           {!loading && !error && (pagination || offset > 0) && (
-            <div className='d-flex justify-content-between mt-3 mb-4'>
+            <div className='recent-posts-pagination'>
               <Button
-                variant='outline-primary'
+                variant='outline-dark'
                 onClick={handlePrevious}
                 disabled={!canGoBack}
               >
                 Previous
               </Button>
+
               <Button
-                variant='outline-primary'
+                variant='outline-dark'
                 onClick={handleNext}
                 disabled={!canGoNext}
               >
