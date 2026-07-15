@@ -34,7 +34,7 @@ function AppBody (props) {
   return (
     <>
       <Routes>
-        <Route path='/' element={<BchSend appData={appData} />} />
+        <Route path='/' element={<RecentPosts />} />
         <Route path='/balance' element={<GetBalance wallet={appData.wallet} />} />
         <Route path='/bch' element={<BchSend appData={appData} />} />
         <Route path='/wallet' element={<Wallet appData={appData} />} />

@@ -21,3 +21,4 @@ Have questions? Need help? Join our community support
 
 ## License
 [MIT](./LICENSE.md)
+.
