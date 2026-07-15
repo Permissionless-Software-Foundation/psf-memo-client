@@ -4,59 +4,93 @@
 
 // Global npm libraries
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { Container, Row, Col, Spinner, Table } from 'react-bootstrap'
+import { Container, Row, Col, Spinner, Button } from 'react-bootstrap'
 
 // Local libraries
 import MemoDb from '../../../services/memo-db'
-import AppUtil from '../../../util'
+import PostFeedItem from '../../post-feed/post-feed-item'
+import PostThreadModal from '../../post-thread-modal'
+import {
+  collectPostAddrs,
+  loadThreadProfiles
+} from '../../post-thread-modal/thread-profiles'
 import '../../../App.css'
+import '../../post-feed/post-feed.css'
 
-const appUtil = new AppUtil()
-
-function truncate (str, maxLen = 16) {
-  if (!str || str.length <= maxLen) return str
-  const half = Math.floor((maxLen - 3) / 2)
-  return `${str.slice(0, half)}...${str.slice(-half)}`
-}
-
-function formatSeen (seen) {
-  if (!seen) return ''
-  const ms = seen > 1e12 ? seen : seen * 1000
-  return new Date(ms).toLocaleString()
-}
+const PAGE_SIZE = 100
 
 function RecentPosts () {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [posts, setPosts] = useState([])
+  const [profiles, setProfiles] = useState({})
   const [pagination, setPagination] = useState(null)
+  const [offset, setOffset] = useState(0)
+  const [threadTxid, setThreadTxid] = useState(null)
+  const [showThreadModal, setShowThreadModal] = useState(false)
+
+  const openThread = (txid) => {
+    setThreadTxid(txid)
+    setShowThreadModal(true)
+  }
+
+  const closeThread = () => {
+    setShowThreadModal(false)
+    setThreadTxid(null)
+  }
 
   useEffect(() => {
     const loadPosts = async () => {
+      setLoading(true)
+      setError(null)
+      setProfiles({})
+
       try {
         const memoDb = new MemoDb()
-        const data = await memoDb.getRecentPosts({ limit: 100, offset: 0 })
-        setPosts(data.posts || [])
+        const data = await memoDb.getRecentPosts({ limit: PAGE_SIZE, offset })
+        const loadedPosts = data.posts || []
+        const addrs = collectPostAddrs(loadedPosts)
+        const profileMap = await loadThreadProfiles(addrs, memoDb)
+
+        setPosts(loadedPosts)
+        setProfiles(profileMap)
         setPagination(data.pagination || null)
       } catch (err) {
         setError(err.message || 'Failed to load recent posts')
+        setPosts([])
+        setProfiles({})
+        setPagination(null)
       }
+
       setLoading(false)
     }
 
     loadPosts()
-  }, [])
+  }, [offset])
+
+  const canGoBack = offset > 0
+  const canGoNext = pagination?.hasMore ?? false
+
+  const handlePrevious = () => {
+    setOffset((prev) => Math.max(0, prev - PAGE_SIZE))
+  }
+
+  const handleNext = () => {
+    setOffset((prev) => prev + PAGE_SIZE)
+  }
 
   return (
     <Container>
       <Row>
         <Col>
           <h1 className='mt-4'>Recent Posts</h1>
-          {pagination && (
+          {pagination && posts.length > 0 && (
             <p className='text-muted'>
-              Showing {posts.length} of {pagination.total} posts
+              Showing {pagination.offset + 1}–{pagination.offset + posts.length} of {pagination.total} posts
             </p>
+          )}
+          {pagination && posts.length === 0 && (
+            <p className='text-muted'>No posts on this page.</p>
           )}
 
           {error && <p className='text-danger'>{error}</p>}
@@ -69,48 +103,46 @@ function RecentPosts () {
             </div>
           )}
 
-          {!loading && !error && (
-            <Table striped bordered hover responsive className='mt-3'>
-              <thead>
-                <tr>
-                  <th>Address</th>
-                  <th>Post</th>
-                  <th>Block</th>
-                  <th>Seen</th>
-                  <th>TXID</th>
-                </tr>
-              </thead>
-              <tbody>
-                {posts.map((post) => (
-                  <tr key={post.txid}>
-                    <td>
-                      <Link
-                        to={`/profile/${encodeURIComponent(post.addr)}`}
-                        style={{ fontFamily: 'monospace' }}
-                        title={post.addr}
-                      >
-                        {truncate(post.addr, 24)}
-                      </Link>
-                    </td>
-                    <td>{post.text}</td>
-                    <td>{post.blockHeight}</td>
-                    <td>{formatSeen(post.seen)}</td>
-                    <td>
-                      <span
-                        style={{ fontFamily: 'monospace', cursor: 'pointer' }}
-                        title={post.txid}
-                        onClick={() => appUtil.copyToClipboard(post.txid)}
-                      >
-                        {truncate(post.txid, 20)}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+          {!loading && !error && posts.length > 0 && (
+            <div className='posts-feed mt-3'>
+              {posts.map((post) => (
+                <PostFeedItem
+                  key={post.txid}
+                  post={post}
+                  profiles={profiles}
+                  onReplyClick={() => openThread(post.txid)}
+                  showFooterMeta
+                />
+              ))}
+            </div>
+          )}
+
+          {!loading && !error && (pagination || offset > 0) && (
+            <div className='d-flex justify-content-between mt-3 mb-4'>
+              <Button
+                variant='outline-primary'
+                onClick={handlePrevious}
+                disabled={!canGoBack}
+              >
+                Previous
+              </Button>
+              <Button
+                variant='outline-primary'
+                onClick={handleNext}
+                disabled={!canGoNext}
+              >
+                Next
+              </Button>
+            </div>
           )}
         </Col>
       </Row>
+
+      <PostThreadModal
+        show={showThreadModal}
+        txid={threadTxid}
+        onHide={closeThread}
+      />
     </Container>
   )
 }
