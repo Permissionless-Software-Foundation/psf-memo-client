@@ -14,7 +14,9 @@ const config = {
   ghRepo: 'https://github.com/Permissionless-Software-Foundation/bch-wallet-web3-spa',
   radicleUrl: 'https://app.radicle.network/seeds/maple.radicle.garden/rad:git:hnrkd5cjwwb5tzx37hq9uqm5ubon7ee468xcy/remotes/hyyycncbn9qzqmobnhjq9rry6t4mbjiadzjoyhaknzxjcz3cxkpfpc',
 
-  backend: 'http://localhost:5021'
+  // Override at build time with REACT_APP_MEMO_DB_URL
+  // (e.g. https://api.mydomain.com). Default suits local memo-db.
+  backend: process.env.REACT_APP_MEMO_DB_URL || 'http://localhost:5021'
 
 }
 
