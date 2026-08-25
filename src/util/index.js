@@ -32,6 +32,16 @@ class AppUtil {
       return false
     }
   }
+
+  // Read text from clipboard and pass it to a state setter.
+  async pasteFromClipboard (setValue) {
+    try {
+      const text = await this.readFromClipboard()
+      setValue(text)
+    } catch (err) {
+      console.warn('Error pasting from clipboard: ', err)
+    }
+  }
 }
 
 export default AppUtil

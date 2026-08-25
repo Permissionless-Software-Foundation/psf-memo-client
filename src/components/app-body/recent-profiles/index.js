@@ -9,15 +9,10 @@ import { Container, Row, Col, Spinner, Table } from 'react-bootstrap'
 // Local libraries
 import MemoDb from '../../../services/memo-db'
 import AppUtil from '../../../util'
+import { truncateAddr, truncateTxid } from '../../post-feed/post-display'
 import '../../../App.css'
 
 const appUtil = new AppUtil()
-
-function truncate (str, maxLen = 16) {
-  if (!str || str.length <= maxLen) return str
-  const half = Math.floor((maxLen - 3) / 2)
-  return `${str.slice(0, half)}...${str.slice(-half)}`
-}
 
 function formatSeen (seen) {
   if (!seen) return ''
@@ -88,7 +83,7 @@ function RecentProfiles () {
                         style={{ fontFamily: 'monospace' }}
                         title={profile.addr}
                       >
-                        {truncate(profile.addr, 24)}
+                        {truncateAddr(profile.addr, 24)}
                       </Link>
                     </td>
                     <td>{profile.text}</td>
@@ -100,7 +95,7 @@ function RecentProfiles () {
                         title={profile.txid}
                         onClick={() => appUtil.copyToClipboard(profile.txid)}
                       >
-                        {truncate(profile.txid, 20)}
+                        {truncateTxid(profile.txid, 20)}
                       </span>
                     </td>
                   </tr>

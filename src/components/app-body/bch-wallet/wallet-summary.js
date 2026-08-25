@@ -38,29 +38,14 @@ function WalletSummary (props) {
     privateKey: blurredPrivateKey ? faEyeSlash : faEye
   }
 
-  // Toggle the state of blurring for the mnemonic
-  const toggleMnemonicBlur = (inObj = {}) => {
+  // Toggle the state of blurring for a field (mnemonic or private key)
+  const toggleBlur = (field) => {
     try {
-      const { walletSummaryData } = inObj
-
-      // toggle the state of blurring
-      const blurredState = walletSummaryData.blurredMnemonic
-      walletSummaryData.setBlurredMnemonic(!blurredState)
+      const blurredState = walletSummaryData[field]
+      const setterName = `set${field[0].toUpperCase()}${field.slice(1)}`
+      walletSummaryData[setterName](!blurredState)
     } catch (error) {
-      console.error('Error toggling mnemonic blur: ', error)
-    }
-  }
-
-  // Toggle the state of blurring for the private key
-  const togglePrivateKeyBlur = (inObj = {}) => {
-    try {
-      const { walletSummaryData } = inObj
-
-      // toggle the state of blurring
-      const blurredState = walletSummaryData.blurredPrivateKey
-      walletSummaryData.setBlurredPrivateKey(!blurredState)
-    } catch (error) {
-      console.error('Error toggling private key blur: ', error)
+      console.error(`Error toggling ${field} blur: `, error)
     }
   }
 
@@ -87,7 +72,7 @@ function WalletSummary (props) {
                         style={{ cursor: 'pointer' }}
                         icon={eyeIcon.mnemonic}
                         size='lg'
-                        onClick={() => toggleMnemonicBlur({ walletSummaryData })}
+                        onClick={() => toggleBlur('blurredMnemonic')}
                       />
                     </Col>
                     <Col xs={6} sm={1} lg={2} style={{ textAlign: 'center' }}>
@@ -104,7 +89,7 @@ function WalletSummary (props) {
                         style={{ cursor: 'pointer' }}
                         icon={eyeIcon.privateKey}
                         size='lg'
-                        onClick={() => togglePrivateKeyBlur({ walletSummaryData })}
+                        onClick={() => toggleBlur('blurredPrivateKey')}
                       />
                     </Col>
                     <Col xs={6} sm={1} lg={2} style={{ textAlign: 'center' }}>
