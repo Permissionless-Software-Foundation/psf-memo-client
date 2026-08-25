@@ -2,19 +2,11 @@
   This is a placeholder View
 */
 
-// Global npm libraries
-import React, { useEffect } from 'react'
+// Local libraries
+import PlaceholderView from './placeholder-view'
 
 function Placeholder3 (props) {
-  useEffect(() => {
-    console.log('Placeholder 3 loaded.')
-  }, [])
-
-  return (
-    <>
-      <p style={{ padding: '25px' }}>This is placeholder View #3</p>
-    </>
-  )
+  return <PlaceholderView viewNumber={3} />
 }
 
 export default Placeholder3

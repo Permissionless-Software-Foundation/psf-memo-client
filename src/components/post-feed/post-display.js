@@ -2,6 +2,10 @@
   Shared display helpers for post feed and thread views.
 */
 
+import { truncateAddr } from '../../util'
+
+export { truncateAddr, truncateTxid } from '../../util'
+
 export function formatRelativeSeen (seen) {
   if (!seen) return ''
   const ms = seen > 1e12 ? seen : seen * 1000
@@ -24,16 +28,6 @@ export function formatRelativeSeen (seen) {
 
   const years = Math.floor(months / 12)
   return `${years}y`
-}
-
-export function truncateAddr (addr, maxLen = 20) {
-  if (!addr || addr.length <= maxLen) return addr
-  const half = Math.floor((maxLen - 3) / 2)
-  return `${addr.slice(0, half)}...${addr.slice(-half)}`
-}
-
-export function truncateTxid (txid, maxLen = 20) {
-  return truncateAddr(txid, maxLen)
 }
 
 export function getDisplayName (addr, profiles) {
