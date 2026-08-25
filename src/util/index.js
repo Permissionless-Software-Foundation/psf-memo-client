@@ -44,4 +44,15 @@ class AppUtil {
   }
 }
 
+// Truncate a long string (address, txid, etc.) for compact display.
+export function truncateAddr (addr, maxLen = 20) {
+  if (!addr || addr.length <= maxLen) return addr
+  const half = Math.floor((maxLen - 3) / 2)
+  return `${addr.slice(0, half)}...${addr.slice(-half)}`
+}
+
+export function truncateTxid (txid, maxLen = 20) {
+  return truncateAddr(txid, maxLen)
+}
+
 export default AppUtil

@@ -8,8 +8,7 @@ import { Container, Row, Col, Spinner, Table } from 'react-bootstrap'
 
 // Local libraries
 import MemoDb from '../../../services/memo-db'
-import AppUtil from '../../../util'
-import { truncateAddr, truncateTxid } from '../../post-feed/post-display'
+import AppUtil, { truncateAddr, truncateTxid } from '../../../util'
 import '../../../App.css'
 
 const appUtil = new AppUtil()
