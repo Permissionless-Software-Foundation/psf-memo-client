@@ -25,7 +25,8 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "echo 'no tests'",
+    "test": "node --test \"test/unit/*.test.js\"",
+    "test:acceptance": "node acceptance/acceptance.js",
     "eject": "react-scripts eject",
     "lint": "standard --env mocha --fix",
     "pub": "node deploy/publish-main.js",
