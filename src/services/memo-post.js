@@ -1,0 +1,89 @@
+/*
+  Memo post behavior: compose, validate, and broadcast a Memo "post" message.
+
+  A Memo post is an OP_RETURN Bitcoin Cash transaction carrying the Memo post
+  protocol prefix (0x6d02) followed by the message text. Broadcasting is done
+  through a wallet that exposes the minimal-slp-wallet adapter surface
+  (walletInfo, getUtxos(), sendOpReturn()).
+
+  The wallet and feed are injected so this module stays testable and free of
+  network/UI concerns; environmentally unsuitable I/O lives behind those small
+  adapter boundaries.
+
+  Constants
+    MEMO_POST_PREFIX : hex prefix for the Memo "post" action (0x6d02)
+    MAX_MEMO_CHARS   : maximum allowed memo length (spec boundary: 217 valid,
+                       218 rejected)
+*/
+
+'use strict'
+
+const MEMO_POST_PREFIX = '6d02'
+const MAX_MEMO_CHARS = 217
+
+class MemoPost {
+  constructor (deps = {}) {
+    this.wallet = deps.wallet
+    this.feed = deps.feed
+  }
+
+  // Validate a candidate memo message.
+  // Returns { ok: true } or { ok: false, type: 'validation' | 'length' }.
+  validate (message) {
+    if (typeof message !== 'string' || message.trim().length === 0) {
+      return { ok: false, type: 'validation' }
+    }
+
+    if (message.length > MAX_MEMO_CHARS) {
+      return { ok: false, type: 'length' }
+    }
+
+    return { ok: true }
+  }
+
+  // Compose and broadcast a Memo post for the given message.
+  // Resolves with the transaction id, or rejects with a typed error.
+  async post (message) {
+    const check = this.validate(message)
+    if (!check.ok) {
+      const err = new Error(
+        check.type === 'length'
+          ? `Memo is too long. Maximum is ${MAX_MEMO_CHARS} characters.`
+          : 'Memo must not be empty.'
+      )
+      err.code = check.type === 'length' ? 'memo_length' : 'memo_validation'
+      throw err
+    }
+
+    if (!this.wallet) {
+      throw new Error('Memo post requires a wallet.')
+    }
+
+    // Spendable outputs used to pay the transaction fee.
+    const bchUtxos = await this.wallet.getUtxos()
+
+    // Broadcast the OP_RETURN transaction with the Memo post prefix.
+    const txid = await this.wallet.sendOpReturn(
+      this.wallet.walletInfo,
+      bchUtxos,
+      message,
+      MEMO_POST_PREFIX
+    )
+
+    // Reflect the new post in the feed once broadcast succeeds.
+    if (this.feed && typeof this.feed.addPost === 'function') {
+      this.feed.addPost({
+        txid,
+        address: this.wallet.walletInfo.cashAddress,
+        text: message
+      })
+    }
+
+    return txid
+  }
+}
+
+MemoPost.MEMO_POST_PREFIX = MEMO_POST_PREFIX
+MemoPost.MAX_MEMO_CHARS = MAX_MEMO_CHARS
+
+module.exports = MemoPost
