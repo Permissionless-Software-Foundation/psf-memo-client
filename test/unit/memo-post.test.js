@@ -89,26 +89,17 @@ test('posting an empty memo throws a validation error and broadcasts nothing', a
   assert.equal(feed.posts.length, 0)
 })
 
-test('posting a whitespace-only memo throws a validation error and broadcasts nothing', async () => {
-  const wallet = fakeWallet()
-  const memoPost = new MemoPost({ wallet })
+test('posting a whitespace-only or non-string memo throws a validation error and broadcasts nothing', async () => {
+  for (const invalid of ['   ', 42]) {
+    const wallet = fakeWallet()
+    const memoPost = new MemoPost({ wallet })
 
-  await assert.rejects(
-    memoPost.post('   '),
-    (err) => err.code === 'memo_validation'
-  )
-  assert.equal(wallet.broadcasts.length, 0)
-})
-
-test('posting a non-string memo throws a validation error', async () => {
-  const wallet = fakeWallet()
-  const memoPost = new MemoPost({ wallet })
-
-  await assert.rejects(
-    memoPost.post(42),
-    (err) => err.code === 'memo_validation'
-  )
-  assert.equal(wallet.broadcasts.length, 0)
+    await assert.rejects(
+      memoPost.post(invalid),
+      (err) => err.code === 'memo_validation'
+    )
+    assert.equal(wallet.broadcasts.length, 0)
+  }
 })
 
 test('posting an over-long memo (218) throws a length error and broadcasts nothing', async () => {

@@ -45,15 +45,7 @@ class MemoPost {
   // Resolves with the transaction id, or rejects with a typed error.
   async post (message) {
     const check = this.validate(message)
-    if (!check.ok) {
-      const err = new Error(
-        check.type === 'length'
-          ? `Memo is too long. Maximum is ${MAX_MEMO_CHARS} characters.`
-          : 'Memo must not be empty.'
-      )
-      err.code = check.type === 'length' ? 'memo_length' : 'memo_validation'
-      throw err
-    }
+    this._throwIfInvalid(check)
 
     if (!this.wallet) {
       throw new Error('Memo post requires a wallet.')
@@ -71,6 +63,26 @@ class MemoPost {
     )
 
     // Reflect the new post in the feed once broadcast succeeds.
+    this._reflectPost(txid, message)
+
+    return txid
+  }
+
+  // Throw the appropriate typed error when a memo fails validation.
+  _throwIfInvalid (check) {
+    if (check.ok) return
+
+    const err = new Error(
+      check.type === 'length'
+        ? `Memo is too long. Maximum is ${MAX_MEMO_CHARS} characters.`
+        : 'Memo must not be empty.'
+    )
+    err.code = check.type === 'length' ? 'memo_length' : 'memo_validation'
+    throw err
+  }
+
+  // Record the new post on the injected feed when one is present.
+  _reflectPost (txid, message) {
     if (this.feed && typeof this.feed.addPost === 'function') {
       this.feed.addPost({
         txid,
@@ -78,8 +90,6 @@ class MemoPost {
         text: message
       })
     }
-
-    return txid
   }
 }
 
