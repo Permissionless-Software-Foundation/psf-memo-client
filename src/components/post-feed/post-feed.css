@@ -603,3 +603,62 @@
     padding: 0 0.75rem;
   }
 }
+
+.post-like-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  min-height: 32px;
+  padding: 4px 0;
+
+  color: var(--ig-text);
+  background: transparent;
+
+  border: 0;
+  border-radius: 0;
+
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  text-decoration: none;
+
+  cursor: pointer;
+
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease;
+}
+
+.post-like-button:hover {
+  color: var(--ig-danger);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  transform: none;
+  opacity: 0.65;
+}
+
+.post-like-button-liked,
+.post-like-button-liked:hover {
+  color: var(--ig-danger);
+  opacity: 1;
+}
+
+.post-like-button-icon {
+  font-size: 18px;
+}
+
+.post-like-button-count {
+  min-width: 1.2em;
+}
+
+.like-tip-modal-target {
+  margin-bottom: 1rem;
+}
+
+.like-tip-modal-error {
+  margin: 0;
+  font-size: 0.95rem;
+}

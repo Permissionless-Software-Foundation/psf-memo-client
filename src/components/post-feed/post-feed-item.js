@@ -2,12 +2,14 @@
   Instagram-style post card for feed and thread views.
 */
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import AppUtil from '../../util'
 import PostReplyCount from '../post-reply-count'
 import PostThreadAvatar from '../post-thread-modal/post-thread-avatar'
+import LikeButton from './like-button'
+import LikeTipModal from './like-tip-modal'
 import {
   formatRelativeSeen,
   getDisplayName,
@@ -21,13 +23,19 @@ function PostFeedItem ({
   post,
   profile = {},
   profiles = {},
+  wallet,
   onReplyClick,
   showRepliedLabel = false,
   showFooterMeta = false,
   showReplyCount = true,
+  showLikeButton = true,
   embedded = false
 }) {
   if (!post) return null
+
+  const [liked, setLiked] = useState(false)
+  const [likeCount, setLikeCount] = useState(post.likeCount || 0)
+  const [showLikeModal, setShowLikeModal] = useState(false)
 
   const displayName = getDisplayName(post.addr, profiles)
 
@@ -44,6 +52,20 @@ function PostFeedItem ({
   const copyTxid = () => {
     if (!post.txid) return
     appUtil.copyToClipboard(post.txid)
+  }
+
+  const handleLikeClick = () => {
+    setShowLikeModal(true)
+  }
+
+  const handleLikeSuccess = () => {
+    setLiked(true)
+    setLikeCount((count) => count + 1)
+    setShowLikeModal(false)
+  }
+
+  const handleLikeModalHide = () => {
+    setShowLikeModal(false)
   }
 
   return (
@@ -117,12 +139,21 @@ function PostFeedItem ({
         </p>
       </div>
 
-      {showReplyCount && (
+      {(showReplyCount || showLikeButton) && (
         <div className='posts-feed-item-actions'>
-          <PostReplyCount
-            count={post.replyCount ?? 0}
-            onClick={onReplyClick}
-          />
+          {showLikeButton && (
+            <LikeButton
+              count={likeCount}
+              liked={liked}
+              onClick={handleLikeClick}
+            />
+          )}
+          {showReplyCount && (
+            <PostReplyCount
+              count={post.replyCount ?? 0}
+              onClick={onReplyClick}
+            />
+          )}
         </div>
       )}
 
@@ -147,6 +178,15 @@ function PostFeedItem ({
           </button>
         </footer>
       )}
+
+      <LikeTipModal
+        show={showLikeModal}
+        post={post}
+        wallet={wallet}
+        profiles={profiles}
+        onHide={handleLikeModalHide}
+        onSuccess={handleLikeSuccess}
+      />
     </Wrapper>
   )
 }

@@ -6,7 +6,7 @@ import React from 'react'
 
 import PostFeedItem from '../post-feed/post-feed-item'
 
-function PostThreadNode ({ post, profiles = {}, depth = 0, isRoot = false }) {
+function PostThreadNode ({ post, profiles = {}, wallet, depth = 0, isRoot = false }) {
   if (!post) return null
 
   const profile = profiles[post.addr] || {}
@@ -21,6 +21,7 @@ function PostThreadNode ({ post, profiles = {}, depth = 0, isRoot = false }) {
           post={post}
           profile={profile}
           profiles={profiles}
+          wallet={wallet}
           showRepliedLabel={!isRoot}
           showReplyCount={false}
           embedded
@@ -30,6 +31,7 @@ function PostThreadNode ({ post, profiles = {}, depth = 0, isRoot = false }) {
             key={reply.txid}
             post={reply}
             profiles={profiles}
+            wallet={wallet}
             depth={depth + 1}
           />
         ))}
