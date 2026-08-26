@@ -40,12 +40,32 @@ function LikeTipModal ({ show, post, wallet, profiles = {}, onHide, onSuccess })
     setError('')
     setSubmitting(false)
 
-    const memoLike = new MemoLike({ wallet })
-    const page = new LikeTipPage({ memoLike })
-    const result = page.open(post.txid, post.addr)
-    if (!result.ok) {
-      setError(formatError(result))
+    let cancelled = false
+
+    const checkBalance = async () => {
+      try {
+        // Refresh the wallet's spendable UTXOs so the gating balance check is
+        // accurate against the live minimal-slp-wallet (which exposes
+        // wallet.utxos as a UtxoStore object, not an array).
+        if (typeof wallet.getUtxos === 'function') {
+          await wallet.getUtxos()
+        }
+        if (cancelled) return
+
+        const memoLike = new MemoLike({ wallet })
+        const page = new LikeTipPage({ memoLike })
+        const result = page.open(post.txid, post.addr)
+        if (!result.ok) {
+          setError(formatError(result))
+        }
+      } catch (err) {
+        if (!cancelled) setError(err.message)
+      }
     }
+
+    checkBalance()
+
+    return () => { cancelled = true }
   }, [show, post, wallet])
 
   async function handleSubmit () {

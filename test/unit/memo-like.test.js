@@ -260,3 +260,27 @@ test('getSpendableSats returns 0 without a wallet or spendable values', () => {
   assert.equal(new MemoLike({ wallet: { utxos: undefined } }).getSpendableSats(), 0)
   assert.equal(new MemoLike({ wallet: { utxos: [{ txid: 'u1' }] } }).getSpendableSats(), 0)
 })
+
+test('getSpendableSats reads spendable BCH outputs from the wallet UtxoStore object', () => {
+  // minimal-slp-wallet exposes wallet.utxos as a UtxoStore object whose
+  // spendable BCH outputs live under utxoStore.bchUtxos.
+  const utxoStore = {
+    utxoStore: {
+      bchUtxos: [
+        { txid: 'u1', satoshis: 1500 },
+        { txid: 'u2', value: 2000 },
+        { txid: 'u3', satoshis: 2500 }
+      ],
+      slpUtxos: { type1: { tokens: [] }, nft: [] }
+    }
+  }
+  const wallet = fakeWallet({ utxos: utxoStore })
+
+  assert.equal(new MemoLike({ wallet }).getSpendableSats(), 6000)
+})
+
+test('getSpendableSats returns 0 for an empty UtxoStore object', () => {
+  const wallet = fakeWallet({ utxos: { utxoStore: { bchUtxos: [] } } })
+
+  assert.equal(new MemoLike({ wallet }).getSpendableSats(), 0)
+})

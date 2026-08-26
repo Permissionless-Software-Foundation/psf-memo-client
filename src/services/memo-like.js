@@ -98,7 +98,12 @@ class MemoLike extends MemoAction {
   // used by different wallet adapters.
   getSpendableSats () {
     if (!this.wallet) return 0
-    const utxos = this.wallet.utxos || []
+    // minimal-slp-wallet exposes wallet.utxos as a UtxoStore object whose
+    // spendable BCH outputs live under utxoStore.bchUtxos, while the test and
+    // acceptance wallets use a plain array. Accept both shapes.
+    const utxos = Array.isArray(this.wallet.utxos)
+      ? this.wallet.utxos
+      : (this.wallet.utxos?.utxoStore?.bchUtxos || [])
     return utxos.reduce((sum, u) => {
       const value = u.value ?? u.satoshis ?? u.amount ?? 0
       return sum + value
