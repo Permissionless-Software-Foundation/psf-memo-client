@@ -16,42 +16,30 @@ const assert = require('node:assert/strict')
 
 const MemoReply = require('../../src/services/memo-reply')
 const ReplyThreadPage = require('../../src/services/reply-thread-page')
+const { registerPageControllerTests, registerPageSubmitTests } = require('./page-controller-helpers')
+const { buildPage } = require('./page-build-helpers')
 
 const MAX = MemoReply.MAX_REPLY_BYTES // 184
 const PARENT_TXID = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-
-function fakeWallet (cashAddress = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d') {
-  const broadcasts = []
-  const wallet = {
-    walletInfo: { cashAddress },
-    utxos: [{ txid: 'utxo-fee' }],
-    getUtxos: async function () { return this.utxos },
-    sendOpReturn: async function (msg, prefix) {
-      this.broadcasts.push({ msg, prefix })
-      if (this.failWith) throw new Error(this.failWith)
-      return 'reply-txid'
-    }
-  }
-  wallet.broadcasts = broadcasts
-  return wallet
-}
 
 function fakeThread (rootTxid = PARENT_TXID) {
   const replies = []
   return { rootTxid, replies, addReply: (r) => replies.push(r) }
 }
 
-function build (deps = {}) {
-  const wallet = deps.wallet || fakeWallet()
-  const thread = deps.thread || fakeThread()
-  const memoReply = new MemoReply({ wallet, thread })
-  const navigations = []
-  const page = new ReplyThreadPage({
-    memoReply,
-    parentTxid: deps.parentTxid || PARENT_TXID,
-    navigate: (path) => navigations.push(path)
+function build () {
+  return buildPage({
+    Page: ReplyThreadPage,
+    Action: MemoReply,
+    actionKey: 'memoReply',
+    storeKey: 'thread',
+    storeFactory: fakeThread,
+    pageDeps: { parentTxid: PARENT_TXID }
   })
-  return { wallet, thread, memoReply, page, navigations }
+}
+
+function buildBarePage (navigations) {
+  return new ReplyThreadPage({ navigate: (p) => navigations.push(p) })
 }
 
 test('REPLY_THREAD_PATH constant', () => {
@@ -82,50 +70,21 @@ test('the byte counter reaches zero at the reply byte limit', () => {
   assert.equal(page.remainingCount(), 0)
 })
 
-test('submitting a valid reply broadcasts the Memo reply prefix and reflects it in the thread', async () => {
-  const { wallet, thread, page, navigations } = build()
-  page.setInput('hello memo')
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, true)
-  assert.equal(page.replying, false)
-  assert.equal(wallet.broadcasts.length, 1)
-  assert.equal(wallet.broadcasts[0].prefix, '6d03')
-  assert.deepEqual(navigations, [])
-  assert.equal(thread.replies.length, 1)
-  assert.equal(thread.replies[0].text, 'hello memo')
-  assert.equal(thread.replies[0].parentTxid, PARENT_TXID)
-})
-
-test('submitting an empty reply is rejected with a validation error and nothing is broadcast', async () => {
-  const { wallet, thread, page, navigations } = build()
-  page.setInput('')
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, false)
-  assert.equal(result.error, 'reply_validation')
-  assert.equal(page.submitError, 'reply_validation')
-  assert.equal(page.replying, false)
-  assert.equal(wallet.broadcasts.length, 0)
-  assert.equal(thread.replies.length, 0)
-  assert.deepEqual(navigations, [])
-})
-
-test('submitting an over-long reply is rejected with a length error and nothing is broadcast', async () => {
-  const { wallet, thread, page, navigations } = build()
-  page.setInput('y'.repeat(MAX + 1))
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, false)
-  assert.equal(result.error, 'reply_length')
-  assert.equal(page.submitError, 'reply_length')
-  assert.equal(page.replying, false)
-  assert.equal(wallet.broadcasts.length, 0)
-  assert.equal(thread.replies.length, 0)
-  assert.deepEqual(navigations, [])
+registerPageSubmitTests({
+  buildPage: build,
+  verb: 'submitting',
+  label: 'reply',
+  busyFlag: 'replying',
+  prefix: '6d03',
+  validationCode: 'reply_validation',
+  lengthCode: 'reply_length',
+  MAX,
+  successPath: null,
+  assertStore: (store) => {
+    assert.equal(store.replies[0].text, 'hello memo')
+    assert.equal(store.replies[0].parentTxid, PARENT_TXID)
+  },
+  assertStoreEmpty: (store) => assert.equal(store.replies.length, 0)
 })
 
 test('the reply page starts idle (not replying)', () => {
@@ -133,72 +92,22 @@ test('the reply page starts idle (not replying)', () => {
   assert.equal(page.replying, false)
 })
 
-test('replying is true while a submit is in flight and false once it settles', async () => {
-  const wallet = fakeWallet()
-  const thread = fakeThread()
-
-  let resolveSend
-  wallet.sendOpReturn = async () => new Promise((resolve) => { resolveSend = resolve })
-  const page = new ReplyThreadPage({
-    memoReply: new MemoReply({ wallet, thread }),
-    parentTxid: PARENT_TXID,
-    navigate: () => {}
-  })
-  page.setInput('hello memo')
-
-  assert.equal(page.replying, false)
-  const pending = page.submit()
-  assert.equal(page.replying, true)
-
-  await new Promise((resolve) => setImmediate(resolve))
-  assert.equal(typeof resolveSend, 'function')
-  resolveSend('in-flight-txid')
-  await pending
-  assert.equal(page.replying, false)
-})
-
-test('submitting without a memo reply handler reports an error and does not navigate', async () => {
-  const navigations = []
-  const page = new ReplyThreadPage({ navigate: (p) => navigations.push(p) })
-  page.setInput('hello')
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, false)
-  assert.deepEqual(navigations, [])
-})
-
-test('a failed broadcast surfaces the real error and does not navigate', async () => {
-  const wallet = fakeWallet()
-  const thread = fakeThread()
-  wallet.failWith = 'BCH UTXO list is empty'
-  const navigations = []
-  const page = new ReplyThreadPage({
-    memoReply: new MemoReply({ wallet, thread }),
-    parentTxid: PARENT_TXID,
-    navigate: (p) => navigations.push(p)
-  })
-  page.setInput('hello memo')
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, false)
-  assert.equal(page.submitError, 'broadcast')
-  assert.match(page.broadcastError, /BCH UTXO list is empty/)
-  assert.equal(wallet.broadcasts.length, 1)
-  assert.equal(wallet.broadcasts[0].prefix, '6d03')
-  assert.deepEqual(navigations, [])
+registerPageControllerTests({
+  buildPage: build,
+  buildBarePage,
+  busyFlag: 'replying',
+  prefix: '6d03'
 })
 
 test('replying to a nested reply uses the selected parent txid', async () => {
   const nestedTxid = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
-  const { thread, page } = build()
+  const { store, page } = build()
   page.setParent(nestedTxid)
   page.setInput('hello nested')
 
   const result = await page.submit()
 
   assert.equal(result.ok, true)
-  assert.equal(thread.replies[0].parentTxid, nestedTxid)
-  assert.equal(thread.replies[0].text, 'hello nested')
+  assert.equal(store.replies[0].parentTxid, nestedTxid)
+  assert.equal(store.replies[0].text, 'hello nested')
 })

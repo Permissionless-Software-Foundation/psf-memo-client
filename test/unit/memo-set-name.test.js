@@ -28,7 +28,8 @@ registerMemoActionTests({
   label: 'setting a name',
   storeKey: 'profiles',
   storeFactory: fakeProfiles,
-  assertStoreEmpty: (profiles, wallet) => assert.equal(profiles.getName(wallet.walletInfo.cashAddress), null)
+  assertStoreEmpty: (profiles, wallet) => assert.equal(profiles.getName(wallet.walletInfo.cashAddress), null),
+  byteBased: true
 })
 test('MEMO_SET_NAME_PREFIX is the Memo set-name action 0x6d01', () => {
   assert.equal(MemoSetName.MEMO_SET_NAME_PREFIX, '6d01')
@@ -49,31 +50,6 @@ test('setting a valid name broadcasts an OP_RETURN with the Memo set-name prefix
 
   // The profile store reflects the new name for this address.
   assert.equal(profiles.getName(wallet.walletInfo.cashAddress), 'trout')
-})
-
-test('setting a name at the maximum byte length with multi-byte characters is accepted', async () => {
-  const wallet = fakeWallet()
-  const memoSetName = new MemoSetName({ wallet })
-
-  // 38 'é' characters are 76 bytes in UTF-8.
-  const name = 'é'.repeat(38)
-  assert.equal(Buffer.byteLength(name, 'utf8'), 76)
-  const txid = await memoSetName.setName(name)
-  assert.equal(txid, 'fake-txid')
-})
-
-test('setting an over-long name in bytes (78) throws a length error even when char count is lower', async () => {
-  const wallet = fakeWallet()
-  const memoSetName = new MemoSetName({ wallet })
-
-  // 40 'é' characters are 80 bytes, exceeding the 77-byte limit.
-  const name = 'é'.repeat(40)
-  assert.ok(Buffer.byteLength(name, 'utf8') > 77)
-  await assert.rejects(
-    memoSetName.setName(name),
-    (err) => err.code === 'name_length'
-  )
-  assert.equal(wallet.broadcasts.length, 0)
 })
 
 test('setting an empty name throws a validation error and broadcasts nothing', async () => {

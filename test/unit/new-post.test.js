@@ -18,7 +18,7 @@ const assert = require('node:assert/strict')
 const MemoPost = require('../../src/services/memo-post')
 const NewPostPage = require('../../src/services/new-post')
 const { fakeWallet } = require('../helpers/fake-wallet')
-const { registerPageControllerTests } = require('./page-controller-helpers')
+const { registerPageControllerTests, registerPageSubmitTests } = require('./page-controller-helpers')
 const { buildPage } = require('./page-build-helpers')
 
 const MAX = MemoPost.MAX_MEMO_CHARS // 217
@@ -70,54 +70,19 @@ test('the character counter reaches zero at the memo limit', () => {
   assert.equal(page.remainingCount(), 0)
 })
 
-test('posting a valid memo broadcasts the Memo post prefix and navigates to the feed', async () => {
-  const { wallet, store, page, navigations } = build()
-  page.setInput('hello memo')
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, true)
-  // The page returns to an idle (not posting) state after success.
-  assert.equal(page.posting, false)
-  // Broadcast happened with the Memo post prefix and the exact message.
-  assert.equal(wallet.broadcasts.length, 1)
-  assert.equal(wallet.broadcasts[0].prefix, '6d02')
-  assert.equal(wallet.broadcasts[0].msg, 'hello memo')
-  // Navigated to the recent feed after posting.
-  assert.deepEqual(navigations, ['/posts/recent'])
-  // The feed reflects the new post from this address.
-  assert.equal(store.posts.length, 1)
-  assert.equal(store.posts[0].text, 'hello memo')
-})
-
-test('posting an empty memo is rejected with a validation error and nothing is broadcast', async () => {
-  const { wallet, store, page, navigations } = build()
-  page.setInput('')
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, false)
-  assert.equal(result.error, 'memo_validation')
-  assert.equal(page.submitError, 'memo_validation')
-  assert.equal(page.posting, false)
-  assert.equal(wallet.broadcasts.length, 0)
-  assert.equal(store.posts.length, 0)
-  assert.deepEqual(navigations, [])
-})
-
-test('posting an over-long memo is rejected with a length error and nothing is broadcast', async () => {
-  const { wallet, store, page, navigations } = build()
-  page.setInput('y'.repeat(MAX + 1))
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, false)
-  assert.equal(result.error, 'memo_length')
-  assert.equal(page.submitError, 'memo_length')
-  assert.equal(page.posting, false)
-  assert.equal(wallet.broadcasts.length, 0)
-  assert.equal(store.posts.length, 0)
-  assert.deepEqual(navigations, [])
+registerPageSubmitTests({
+  buildPage: build,
+  verb: 'posting',
+  label: 'memo',
+  busyFlag: 'posting',
+  prefix: '6d02',
+  validationCode: 'memo_validation',
+  lengthCode: 'memo_length',
+  MAX,
+  successPath: '/posts/recent',
+  assertBroadcastMsg: (broadcast) => assert.equal(broadcast.msg, 'hello memo'),
+  assertStore: (store) => assert.equal(store.posts[0].text, 'hello memo'),
+  assertStoreEmpty: (store) => assert.equal(store.posts.length, 0)
 })
 
 test('the new post page starts idle (not posting)', () => {
