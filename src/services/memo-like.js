@@ -16,7 +16,8 @@
 
   Constants
     MEMO_LIKE_PREFIX  : hex prefix for the Memo "like" action (0x6d04)
-    DUST_LIMIT_SATS   : smallest non-dust BCH output (3000 sats)
+    DUST_LIMIT_SATS   : minimum wallet balance required to broadcast a like (3000 sats)
+    DUST_TIP_SATS     : smallest non-dust tip output (600 sats)
     MAX_TIP_SATS      : sanity maximum for a single tip (100000000 sats = 1 BCH)
     PARENT_TXID_BYTES : liked post txid size in bytes (32)
 */
@@ -26,6 +27,7 @@ const { hexToBytes } = require('./hex')
 
 const MEMO_LIKE_PREFIX = '6d04'
 const DUST_LIMIT_SATS = 3000
+const DUST_TIP_SATS = 600
 const MAX_TIP_SATS = 100000000
 const PARENT_TXID_BYTES = 32
 
@@ -43,6 +45,7 @@ class MemoLike extends MemoAction {
     super(deps)
     this.feed = deps.feed
     this.dustLimit = deps.dustLimit || DUST_LIMIT_SATS
+    this.dustTipSats = deps.dustTipSats || DUST_TIP_SATS
     this.maxTip = deps.maxTip || MAX_TIP_SATS
   }
 
@@ -81,8 +84,8 @@ class MemoLike extends MemoAction {
       throw err
     }
 
-    if (tipSats > 0 && tipSats < this.dustLimit) {
-      const err = new Error(`Tip is below the dust limit of ${this.dustLimit} sats.`)
+    if (tipSats > 0 && tipSats < this.dustTipSats) {
+      const err = new Error(`Tip is below the dust limit of ${this.dustTipSats} sats.`)
       err.code = 'like_dust'
       throw err
     }
@@ -189,6 +192,7 @@ class MemoLike extends MemoAction {
 
 MemoLike.MEMO_LIKE_PREFIX = MEMO_LIKE_PREFIX
 MemoLike.DUST_LIMIT_SATS = DUST_LIMIT_SATS
+MemoLike.DUST_TIP_SATS = DUST_TIP_SATS
 MemoLike.MAX_TIP_SATS = MAX_TIP_SATS
 
 module.exports = MemoLike

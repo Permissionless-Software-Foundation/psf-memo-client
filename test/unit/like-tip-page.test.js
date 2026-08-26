@@ -154,7 +154,7 @@ test('submitting with a non-numeric tip string is rejected', async () => {
 test('submitting with a dust tip is rejected', async () => {
   const { wallet, page } = build()
   page.open(POST_TXID, AUTHOR_ADDRESS)
-  page.setTip('2999')
+  page.setTip('599')
 
   const result = await page.submit()
 

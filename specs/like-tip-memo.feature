@@ -39,6 +39,7 @@ Feature: Like / Tip a Memo
 
     Examples:
       | tip |
+      | 600 |
       | 3000 |
       | 25000 |
 
@@ -64,7 +65,7 @@ Feature: Like / Tip a Memo
     Examples:
       | tip |
       | 1 |
-      | 2999 |
+      | 599 |
 
   Scenario: Like / Tip a Memo - 6 a tip above the maximum is rejected
     Given the wallet has a spendable balance of 150000000 sats

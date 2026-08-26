@@ -123,8 +123,12 @@ function LikeTipModal ({ show, post, wallet, profiles = {}, onHide, onSuccess })
               step='1'
               placeholder='0'
               value={tip}
-              onChange={(e) => setTip(e.target.value)}
-              disabled={submitting || !!error}
+              onChange={(e) => {
+                setTip(e.target.value)
+                // Clear a previous validation error so the user can retry.
+                setError('')
+              }}
+              disabled={submitting}
             />
           </Form.Group>
         </Form>
@@ -141,7 +145,7 @@ function LikeTipModal ({ show, post, wallet, profiles = {}, onHide, onSuccess })
         <Button
           variant='primary'
           onClick={handleSubmit}
-          disabled={submitting || !!error || !post || !wallet}
+          disabled={submitting || !post || !wallet}
         >
           {submitting ? 'Liking...' : 'Like'}
         </Button>

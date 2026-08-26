@@ -59,6 +59,10 @@ test('DUST_LIMIT_SATS is 3000', () => {
   assert.equal(MemoLike.DUST_LIMIT_SATS, 3000)
 })
 
+test('DUST_TIP_SATS is 600', () => {
+  assert.equal(MemoLike.DUST_TIP_SATS, 600)
+})
+
 test('MAX_TIP_SATS is 100000000', () => {
   assert.equal(MemoLike.MAX_TIP_SATS, 100000000)
 })
@@ -135,20 +139,23 @@ test('a negative tip is rejected with a validation error', async () => {
   await assertLikeRejected(fakeWallet(), -1, 'like_validation')
 })
 
-test('a tip below the dust limit is rejected with a dust error', async () => {
+test('a tip below the tip dust limit is rejected with a dust error', async () => {
   const wallet = fakeWallet({ utxos: [{ txid: 'u1', value: 100000 }] })
   await assertLikeRejected(wallet, 1, 'like_dust')
-  await assertLikeRejected(wallet, 2999, 'like_dust')
+  await assertLikeRejected(wallet, 599, 'like_dust')
 })
 
-test('a tip at the dust limit is accepted', async () => {
+test('a tip at the tip dust limit is accepted', async () => {
   const wallet = fakeWallet({ utxos: [{ txid: 'u1', value: 100000 }] })
   const memoLike = new MemoLike({ wallet })
 
-  const txid = await memoLike.like(POST_TXID, 3000, AUTHOR_ADDRESS)
+  const txid = await memoLike.like(POST_TXID, 600, AUTHOR_ADDRESS)
 
   assert.equal(txid, 'fake-txid')
   assert.equal(wallet.broadcasts.length, 1)
+  assert.deepEqual(wallet.broadcasts[0].bchOutput, [
+    { address: AUTHOR_ADDRESS, amountSat: 600 }
+  ])
 })
 
 test('a tip above the hard maximum is rejected with a maximum error', async () => {
