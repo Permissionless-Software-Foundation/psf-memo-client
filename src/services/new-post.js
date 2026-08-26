@@ -26,6 +26,7 @@ class NewPostPage {
 
     this.input = ''
     this.submitError = null
+    this.broadcastError = null
     this.posting = false
 
     // The navigation menu links to the new post page.
@@ -55,10 +56,12 @@ class NewPostPage {
   }
 
   // Validate and post the current draft. On success, navigate to the recent
-  // feed. On failure, record the typed error. Resolves with a result object.
+  // feed. On failure, record the typed error and stay on the page. Resolves
+  // with a result object.
   async submit () {
     this.posting = true
     this.submitError = null
+    this.broadcastError = null
 
     try {
       if (!this.memoPost) {
@@ -70,9 +73,16 @@ class NewPostPage {
       this.posting = false
       return { ok: true, txid }
     } catch (err) {
-      this.submitError = err.code || 'memo_validation'
+      if (err.code === 'memo_validation' || err.code === 'memo_length') {
+        // Local validation failure: record the typed validation error.
+        this.submitError = err.code
+      } else {
+        // Broadcast (or handler) failure: surface the real error message.
+        this.broadcastError = err.message || String(err)
+        this.submitError = 'broadcast'
+      }
       this.posting = false
-      return { ok: false, error: this.submitError }
+      return { ok: false, error: this.submitError, message: this.broadcastError }
     }
   }
 }

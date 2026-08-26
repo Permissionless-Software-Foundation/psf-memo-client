@@ -29,6 +29,7 @@ function fakeWallet (cashAddress = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0
     getUtxos: async function () { return this.utxos },
     sendOpReturn: async function (walletInfo, bchUtxos, msg, prefix) {
       this.broadcasts.push({ walletInfo, bchUtxos, msg, prefix })
+      if (this.failWith) throw new Error(this.failWith)
       return 'newpost-txid'
     }
   }
@@ -170,4 +171,42 @@ test('submitting without a memo post handler reports an error and does not navig
 
   assert.equal(result.ok, false)
   assert.deepEqual(navigations, [])
+})
+
+test('a failed broadcast surfaces the real error and does not navigate', async () => {
+  const wallet = fakeWallet()
+  const feed = fakeFeed()
+  wallet.failWith = 'BCH UTXO list is empty'
+  const navigations = []
+  const page = new NewPostPage({
+    memoPost: new MemoPost({ wallet, feed }),
+    navigate: (p) => navigations.push(p)
+  })
+  page.setInput('hello memo')
+
+  const result = await page.submit()
+
+  assert.equal(result.ok, false)
+  assert.equal(page.submitError, 'broadcast')
+  assert.match(page.broadcastError, /BCH UTXO list is empty/)
+  // The broadcast was attempted (recorded) before it failed.
+  assert.equal(wallet.broadcasts.length, 1)
+  assert.equal(wallet.broadcasts[0].prefix, '6d02')
+  // The user stays on the page.
+  assert.deepEqual(navigations, [])
+})
+
+test('a failed broadcast surfaces a different real error message', async () => {
+  const wallet = fakeWallet()
+  wallet.failWith = 'Insufficient balance'
+  const page = new NewPostPage({
+    memoPost: new MemoPost({ wallet }),
+    navigate: () => {}
+  })
+  page.setInput('hello memo')
+
+  const result = await page.submit()
+
+  assert.equal(result.ok, false)
+  assert.match(page.broadcastError, /Insufficient balance/)
 })
