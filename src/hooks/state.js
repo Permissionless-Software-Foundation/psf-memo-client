@@ -2,8 +2,11 @@ import { useState } from 'react'
 // import { useQueryParam, StringParam } from 'use-query-params'
 import useLocalStorageState from 'use-local-storage-state'
 import AppUtil from '../util'
+import Profiles from '../services/profiles'
 
 import { useLocation } from 'react-router-dom'
+
+const defaultProfiles = new Profiles()
 
 function useAppState () {
   const location = useLocation()
@@ -150,6 +153,7 @@ function useAppState () {
     updateLocalStorage,
     updateBchWalletState,
     appUtil: new AppUtil(),
+    profiles: defaultProfiles,
     currentPath: location.pathname,
     setIsSingleView,
     isSingleView,

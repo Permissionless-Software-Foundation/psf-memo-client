@@ -27,8 +27,8 @@ function fakeWallet (cashAddress = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0
     walletInfo: { cashAddress },
     utxos: [{ txid: 'utxo-fee' }],
     getUtxos: async function () { return this.utxos },
-    sendOpReturn: async function (walletInfo, bchUtxos, msg, prefix) {
-      this.broadcasts.push({ walletInfo, bchUtxos, msg, prefix })
+    sendOpReturn: async function (msg, prefix) {
+      this.broadcasts.push({ msg, prefix })
       if (this.failWith) throw new Error(this.failWith)
       return 'newpost-txid'
     }

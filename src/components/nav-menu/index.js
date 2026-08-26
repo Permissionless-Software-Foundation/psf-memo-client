@@ -94,6 +94,14 @@ function NavMenu (props) {
             >
               Check Balance
             </NavLink>
+
+            <NavLink
+              className={(currentPath === '/account') ? 'nav-link-active' : 'nav-link-inactive'}
+              to='/account'
+              onClick={handleClickEvent}
+            >
+              Account
+            </NavLink>
             <NavLink
               className={(currentPath === '/sweep') ? 'nav-link-active' : 'nav-link-inactive'}
               to='/sweep'

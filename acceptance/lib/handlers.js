@@ -18,8 +18,12 @@
 
 const MemoPost = require('../../src/services/memo-post')
 const NewPostPage = require('../../src/services/new-post')
+const MemoSetName = require('../../src/services/memo-set-name')
+const SetNamePage = require('../../src/services/set-name-page')
+const AccountPage = require('../../src/services/account-page')
 
 const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
+const MEMO_SET_NAME_PREFIX = MemoSetName.MEMO_SET_NAME_PREFIX
 
 // A fake wallet exposing the minimal-slp-wallet adapter surface the app uses.
 function makeWallet (address) {
@@ -30,9 +34,9 @@ function makeWallet (address) {
     getUtxos: async function () {
       return this.utxos
     },
-    sendOpReturn: async function (walletInfo, bchUtxos, msg, prefix) {
+    sendOpReturn: async function (msg, prefix) {
       // Record the broadcast attempt, then fail if configured to do so.
-      this.broadcasts.push({ walletInfo, bchUtxos, msg, prefix })
+      this.broadcasts.push({ msg, prefix })
       if (this.failWith) throw new Error(this.failWith)
       return 'aa'.repeat(32)
     }
@@ -46,6 +50,16 @@ function makeFeed () {
   return {
     posts,
     addPost: (post) => posts.push(post)
+  }
+}
+
+// A fake profile store recording display names set for addresses.
+function makeProfiles () {
+  const names = {}
+  return {
+    names,
+    setName: (addr, name) => { names[addr] = name },
+    getName: (addr) => names[addr] || null
   }
 }
 
@@ -68,6 +82,20 @@ function createWorld () {
     memoPost,
     navigate: (path) => { world.currentPath = path },
     menuLinks: []
+  })
+
+  // The Set Name Page and Account Page controllers share a profile store so
+  // a name set on one page is visible on the other.
+  const profiles = makeProfiles()
+  const memoSetName = new MemoSetName({ wallet, profiles })
+  world.setNamePage = new SetNamePage({
+    memoSetName,
+    navigate: (path) => { world.currentPath = path }
+  })
+  world.accountPage = new AccountPage({
+    wallet,
+    profiles,
+    navigate: (path) => { world.currentPath = path }
   })
 
   return world
@@ -161,10 +189,35 @@ const handlers = [
     }
   },
   {
+    name: 'type name text',
+    pattern: /^I type a name with the text "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) {
+        throw new Error(`Missing example value for "${param}"`)
+      }
+      world.setNamePage.setInput(example[param])
+    }
+  },
+  {
     name: 'submit/click post',
     pattern: /^I (?:submit the memo|click the post button)$/,
     async run (m, example, world) {
       await world.newPage.submit()
+    }
+  },
+  {
+    name: 'submit name',
+    pattern: /^I submit the name$/,
+    async run (m, example, world) {
+      await world.setNamePage.submit()
+    }
+  },
+  {
+    name: 'click Set Name button',
+    pattern: /^I click the Set Name button$/,
+    run (m, example, world) {
+      world.accountPage.clickSetName()
     }
   },
   {
@@ -181,6 +234,23 @@ const handlers = [
       }
       if (last.msg !== world.newPage.input) {
         throw new Error('Broadcast message text did not match the composed memo.')
+      }
+    }
+  },
+  {
+    name: 'broadcasts OP_RETURN with Memo set-name prefix',
+    pattern: /^the app broadcasts an OP_RETURN transaction with the Memo set-name prefix$/,
+    run (m, example, world) {
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) {
+        throw new Error('No OP_RETURN transaction was broadcast.')
+      }
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== MEMO_SET_NAME_PREFIX) {
+        throw new Error(`Expected Memo set-name prefix ${MEMO_SET_NAME_PREFIX}, got "${last.prefix}".`)
+      }
+      if (last.msg !== world.setNamePage.input) {
+        throw new Error('Broadcast name text did not match the typed name.')
       }
     }
   },
@@ -223,6 +293,17 @@ const handlers = [
     }
   },
   {
+    name: 'set name page shows validation/length error',
+    pattern: /^the set name page shows a (validation|length) error$/,
+    run (m, example, world) {
+      const kind = m[1]
+      const expectedCode = kind === 'validation' ? 'name_validation' : 'name_length'
+      if (world.setNamePage.submitError !== expectedCode) {
+        throw new Error(`Expected ${expectedCode}, got ${world.setNamePage.submitError}.`)
+      }
+    }
+  },
+  {
     name: 'remaining character count',
     pattern: /^the new post page shows a remaining character count of <([A-Za-z0-9_]+)>$/,
     run (m, example, world) {
@@ -238,11 +319,47 @@ const handlers = [
     }
   },
   {
+    name: 'remaining byte count',
+    pattern: /^the set name page shows a remaining byte count of <([A-Za-z0-9_]+)>$/,
+    run (m, example, world) {
+      const param = m[1]
+      const expected = parseInt(example[param], 10)
+      if (Number.isNaN(expected)) {
+        throw new Error(`Invalid expected count for "${param}".`)
+      }
+      const actual = world.setNamePage.remainingCount()
+      if (actual !== expected) {
+        throw new Error(`Expected ${expected} remaining bytes, got ${actual}.`)
+      }
+    }
+  },
+  {
     name: 'app does not broadcast any transaction',
     pattern: /^(?:the wallet|the app) does not broadcast any transaction$/,
     run (m, example, world) {
       if (world.wallet.broadcasts.length !== 0) {
         throw new Error('A transaction was broadcast when none was expected.')
+      }
+    }
+  },
+  {
+    name: 'account page shows name',
+    pattern: /^the account page shows my name as "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      const expected = example[param]
+      const actual = world.accountPage.getName()
+      if (actual !== expected) {
+        throw new Error(`Expected account name "${expected}", got "${actual}".`)
+      }
+    }
+  },
+  {
+    name: 'account page shows Set Name button',
+    pattern: /^the account page shows a Set Name button$/,
+    run (m, example, world) {
+      if (!world.accountPage.hasSetNameButton()) {
+        throw new Error('Account page does not show a Set Name button.')
       }
     }
   }

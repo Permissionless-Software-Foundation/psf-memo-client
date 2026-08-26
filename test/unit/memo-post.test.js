@@ -24,8 +24,8 @@ function fakeWallet (cashAddress = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0
   const wallet = {
     walletInfo: { cashAddress },
     getUtxos: async () => utxos,
-    sendOpReturn: async (walletInfo, bchUtxos, msg, prefix) => {
-      broadcasts.push({ walletInfo, bchUtxos, msg, prefix })
+    sendOpReturn: async (msg, prefix) => {
+      broadcasts.push({ msg, prefix })
       return 'fake-txid'
     }
   }
@@ -55,10 +55,6 @@ test('posting a valid memo broadcasts an OP_RETURN with the Memo post prefix and
   const b = wallet.broadcasts[0]
   assert.equal(b.prefix, '6d02')
   assert.equal(b.msg, 'hello memo')
-  // The broadcast uses the wallet's spendable UTXOs.
-  assert.equal(b.bchUtxos.length, 1)
-  // The wallet info passed to sendOpReturn is the authenticated wallet.
-  assert.equal(b.walletInfo.cashAddress, wallet.walletInfo.cashAddress)
 
   // The feed reflects the new post from this address with this text.
   assert.equal(feed.posts.length, 1)
