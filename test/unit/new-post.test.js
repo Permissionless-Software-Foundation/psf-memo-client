@@ -154,7 +154,7 @@ test('posting is true while a submit is in flight and false once it settles', as
   assert.equal(page.posting, true)
 
   // Yield until the async chain reaches the deferred sendOpReturn call.
-  await new Promise((r) => setImmediate(r))
+  await new Promise((resolve) => setImmediate(resolve))
   assert.equal(typeof resolveSend, 'function')
   resolveSend('in-flight-txid')
   await pending
