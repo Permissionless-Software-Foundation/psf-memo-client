@@ -57,3 +57,7 @@ class PageController {
 }
 
 module.exports = PageController
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-26T02:56:41.826Z","module_hash":"3799cba6a1b2af39fb7e570336328abc7216f01ed2af7071a2a0d345469f7fae","functions":[{"id":"func/PageController.constructor","name":"PageController.constructor","line":13,"end_line":18,"hash":"09ba0e480cbc1213c699f45c7b6ef59e584dce4e8d4f1ab0adf5094435eba06f"},{"id":"func/PageController.setInput","name":"PageController.setInput","line":21,"end_line":24,"hash":"595484662b7ca07ef5eef5cebbff06309242552d9b4d15687df02f260ba88244"},{"id":"func/PageController.submit","name":"PageController.submit","line":29,"end_line":42,"hash":"6e9c336a13eb33e355b92a1a1f82ba6ac480c9125dc51d433a0b1acfb01d5d39"},{"id":"func/PageController._handleSubmitFailure","name":"PageController._handleSubmitFailure","line":47,"end_line":56,"hash":"3d9ad3eb3a25e11b8a1eef164b2757034499b85b439754bb606622f99c72d5f9"}]}
+// mutate4javascript-manifest-end

@@ -22,15 +22,18 @@ const MEMO_POST_PREFIX = '6d02'
 const MAX_MEMO_CHARS = 217
 
 class MemoPost extends MemoAction {
+  static config = {
+    prefix: MEMO_POST_PREFIX,
+    walletRequiredMsg: 'Memo post requires a wallet.',
+    lengthMessage: `Memo is too long. Maximum is ${MAX_MEMO_CHARS} characters.`,
+    emptyMessage: 'Memo must not be empty.',
+    lengthCode: 'memo_length',
+    validationCode: 'memo_validation'
+  }
+
   constructor (deps = {}) {
     super(deps)
     this.feed = deps.feed
-    this.prefix = MEMO_POST_PREFIX
-    this.walletRequiredMsg = 'Memo post requires a wallet.'
-    this.lengthMessage = `Memo is too long. Maximum is ${MAX_MEMO_CHARS} characters.`
-    this.emptyMessage = 'Memo must not be empty.'
-    this.lengthCode = 'memo_length'
-    this.validationCode = 'memo_validation'
   }
 
   // A memo is over-length when it exceeds the character limit.
@@ -62,5 +65,5 @@ MemoPost.MAX_MEMO_CHARS = MAX_MEMO_CHARS
 module.exports = MemoPost
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-26T02:54:15.221Z","module_hash":"7060e3997af5f6340180385c1e96e055614280683bffdeb737e49c37ad6ce946","functions":[{"id":"func/MemoPost.constructor","name":"MemoPost.constructor","line":25,"end_line":34,"hash":"f1843343deb758b304364862c2c58af3a8a5b03e3d8a70f3056c8679e869a9ed"},{"id":"func/MemoPost.isTooLong","name":"MemoPost.isTooLong","line":37,"end_line":39,"hash":"833f9f66eae849df0248d0c696c95c767a121b394b1c728bc3ec675668dff5de"},{"id":"func/MemoPost.post","name":"MemoPost.post","line":43,"end_line":45,"hash":"26d8e84b520fae1928f7f72215e6ed95f7219c14266c99b710e2af5373cb6faf"},{"id":"func/MemoPost.reflect","name":"MemoPost.reflect","line":48,"end_line":56,"hash":"87e2168a71309a572c60b63f382dd6f681cb28ed543090dbde399e29556cfcdf"}]}
+// {"version":1,"tested_at":"2026-08-26T02:59:50.005Z","module_hash":"ef34e1b3318b764dab099f693855e5f57704d60b2173e99c146bdbf34b6dd8c5","functions":[{"id":"func/MemoPost.constructor","name":"MemoPost.constructor","line":34,"end_line":37,"hash":"527e19b059e463a67be214a5c77c0ce4261ffadb58b9546b422be543c1df292d"},{"id":"func/MemoPost.isTooLong","name":"MemoPost.isTooLong","line":40,"end_line":42,"hash":"833f9f66eae849df0248d0c696c95c767a121b394b1c728bc3ec675668dff5de"},{"id":"func/MemoPost.post","name":"MemoPost.post","line":46,"end_line":48,"hash":"26d8e84b520fae1928f7f72215e6ed95f7219c14266c99b710e2af5373cb6faf"},{"id":"func/MemoPost.reflect","name":"MemoPost.reflect","line":51,"end_line":59,"hash":"87e2168a71309a572c60b63f382dd6f681cb28ed543090dbde399e29556cfcdf"}]}
 // mutate4javascript-manifest-end

@@ -51,3 +51,7 @@ SetNamePage.SET_NAME_PATH = SET_NAME_PATH
 SetNamePage.ACCOUNT_PATH = ACCOUNT_PATH
 
 module.exports = SetNamePage
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-26T02:57:01.182Z","module_hash":"398fed9fb3ec02fb64027d97c4d0110f667014fd86102413e03c92b26cdbb03c","functions":[{"id":"func/SetNamePage.constructor","name":"SetNamePage.constructor","line":23,"end_line":29,"hash":"4ce053830f485ce8a0fba4495cd85fc5e2cac3c9db88b5cbf1e8c66a371a9752"},{"id":"func/SetNamePage.remainingCount","name":"SetNamePage.remainingCount","line":32,"end_line":34,"hash":"a6aac7215cf5bcbbfbab23f8edfa3c665bcf0ddf6db1d83601c9c23b9de56ad6"},{"id":"func/SetNamePage._setBusy","name":"SetNamePage._setBusy","line":37,"end_line":39,"hash":"a0947ed899e0def1f6ae243197d409f5603c4820467f0e0fafdcb4deadb3a92b"},{"id":"func/SetNamePage._perform","name":"SetNamePage._perform","line":42,"end_line":47,"hash":"8614f25b06dcb21b81ab94b4a4611c5e3719ebf4ed7ab13e13976ab0d5938b27"}]}
+// mutate4javascript-manifest-end
