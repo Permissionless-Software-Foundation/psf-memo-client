@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-08-26T11:43:51.597994833Z","feature_name":"Reply to a Memo","feature_path":"../../specs/reply-memo.feature","background_hash":"e1d5f81f1ed083ac6934c429ca3cb4a0f8d4dac44c2eaa45c0960920bde2c017","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Reply to a Memo - 2 an empty reply is rejected","scenario_hash":"573c450bfab01f83d24545535cdaa4b2bb4c5617c092ff4f1532afa8dc0c20d2","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-08-26T11:43:51.597994833Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Reply to a Memo - 1, Reply to a Memo - 2, Reply to a Memo - 3, Reply to a Memo - 4, Reply to a Memo - 5, Reply to a Memo - 6, Reply to a Memo - 7
 Feature: Reply to a Memo
 
