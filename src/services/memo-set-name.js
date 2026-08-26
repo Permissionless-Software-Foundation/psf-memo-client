@@ -17,6 +17,7 @@
 */
 
 const MemoAction = require('./memo-action')
+const { byteLength } = require('./utf8')
 
 const MEMO_SET_NAME_PREFIX = '6d01'
 const MAX_NAME_BYTES = 77
@@ -38,7 +39,7 @@ class MemoSetName extends MemoAction {
 
   // A name is over-length when it exceeds the byte limit.
   isTooLong (name) {
-    return Buffer.byteLength(name, 'utf8') > MAX_NAME_BYTES
+    return byteLength(name) > MAX_NAME_BYTES
   }
 
   // Compose and broadcast a Memo set-name transaction for the given name.
