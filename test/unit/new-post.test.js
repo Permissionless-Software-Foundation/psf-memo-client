@@ -88,6 +88,8 @@ test('posting a valid memo broadcasts the Memo post prefix and navigates to the 
   const result = await page.submit()
 
   assert.equal(result.ok, true)
+  // The page returns to an idle (not posting) state after success.
+  assert.equal(page.posting, false)
   // Broadcast happened with the Memo post prefix and the exact message.
   assert.equal(wallet.broadcasts.length, 1)
   assert.equal(wallet.broadcasts[0].prefix, '6d02')
@@ -108,6 +110,7 @@ test('posting an empty memo is rejected with a validation error and nothing is b
   assert.equal(result.ok, false)
   assert.equal(result.error, 'memo_validation')
   assert.equal(page.submitError, 'memo_validation')
+  assert.equal(page.posting, false)
   assert.equal(wallet.broadcasts.length, 0)
   assert.equal(feed.posts.length, 0)
   assert.deepEqual(navigations, [])
@@ -122,9 +125,40 @@ test('posting an over-long memo is rejected with a length error and nothing is b
   assert.equal(result.ok, false)
   assert.equal(result.error, 'memo_length')
   assert.equal(page.submitError, 'memo_length')
+  assert.equal(page.posting, false)
   assert.equal(wallet.broadcasts.length, 0)
   assert.equal(feed.posts.length, 0)
   assert.deepEqual(navigations, [])
+})
+
+test('the new post page starts idle (not posting)', () => {
+  const { page } = build()
+  assert.equal(page.posting, false)
+})
+
+test('posting is true while a submit is in flight and false once it settles', async () => {
+  const wallet = fakeWallet()
+  const feed = fakeFeed()
+
+  // Defer the broadcast so we can observe the in-flight posting state.
+  let resolveSend
+  wallet.sendOpReturn = async () => new Promise((resolve) => { resolveSend = resolve })
+  const page = new NewPostPage({
+    memoPost: new MemoPost({ wallet, feed }),
+    navigate: () => {}
+  })
+  page.setInput('hello memo')
+
+  assert.equal(page.posting, false)
+  const pending = page.submit()
+  assert.equal(page.posting, true)
+
+  // Yield until the async chain reaches the deferred sendOpReturn call.
+  await new Promise((r) => setImmediate(r))
+  assert.equal(typeof resolveSend, 'function')
+  resolveSend('in-flight-txid')
+  await pending
+  assert.equal(page.posting, false)
 })
 
 test('submitting without a memo post handler reports an error and does not navigate', async () => {
