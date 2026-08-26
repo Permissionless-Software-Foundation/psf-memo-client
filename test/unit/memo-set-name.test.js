@@ -15,34 +15,21 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 
 const MemoSetName = require('../../src/services/memo-set-name')
+const { fakeWallet } = require('../helpers/fake-wallet')
+const { fakeProfiles } = require('../helpers/fake-profiles')
+const { registerMemoActionTests } = require('./memo-action-helpers')
 
-// A fake wallet that records every broadcast attempt. It satisfies the small
-// adapter surface the MemoSetName module needs: walletInfo, getUtxos(),
-// sendOpReturn().
-function fakeWallet (cashAddress = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d', utxos = [{ txid: 'utxo1' }]) {
-  const broadcasts = []
-  const wallet = {
-    walletInfo: { cashAddress },
-    getUtxos: async () => utxos,
-    sendOpReturn: async (msg, prefix) => {
-      broadcasts.push({ msg, prefix })
-      return 'fake-txid'
-    }
-  }
-  wallet.broadcasts = broadcasts
-  return wallet
-}
-
-// A fake profile store that records names set for addresses.
-function fakeProfiles () {
-  const names = {}
-  return {
-    names,
-    setName: (addr, name) => { names[addr] = name },
-    getName: (addr) => names[addr] || null
-  }
-}
-
+registerMemoActionTests({
+  Action: MemoSetName,
+  method: 'setName',
+  MAX: 77,
+  lengthCode: 'name_length',
+  validationCode: 'name_validation',
+  label: 'setting a name',
+  storeKey: 'profiles',
+  storeFactory: fakeProfiles,
+  assertStoreEmpty: (profiles, wallet) => assert.equal(profiles.getName(wallet.walletInfo.cashAddress), null)
+})
 test('MEMO_SET_NAME_PREFIX is the Memo set-name action 0x6d01', () => {
   assert.equal(MemoSetName.MEMO_SET_NAME_PREFIX, '6d01')
 })
@@ -62,16 +49,6 @@ test('setting a valid name broadcasts an OP_RETURN with the Memo set-name prefix
 
   // The profile store reflects the new name for this address.
   assert.equal(profiles.getName(wallet.walletInfo.cashAddress), 'trout')
-})
-
-test('setting a name at the maximum byte length (77) is accepted', async () => {
-  const wallet = fakeWallet()
-  const memoSetName = new MemoSetName({ wallet })
-
-  const name = 'x'.repeat(77)
-  const txid = await memoSetName.setName(name)
-  assert.equal(txid, 'fake-txid')
-  assert.equal(wallet.broadcasts[0].msg, name)
 })
 
 test('setting a name at the maximum byte length with multi-byte characters is accepted', async () => {
@@ -107,32 +84,6 @@ test('setting an empty name throws a validation error and broadcasts nothing', a
   await assert.rejects(
     memoSetName.setName(''),
     (err) => err.code === 'name_validation'
-  )
-  assert.equal(wallet.broadcasts.length, 0)
-  assert.equal(profiles.getName(wallet.walletInfo.cashAddress), null)
-})
-
-test('setting a whitespace-only or non-string name throws a validation error and broadcasts nothing', async () => {
-  for (const invalid of ['   ', 42]) {
-    const wallet = fakeWallet()
-    const memoSetName = new MemoSetName({ wallet })
-
-    await assert.rejects(
-      memoSetName.setName(invalid),
-      (err) => err.code === 'name_validation'
-    )
-    assert.equal(wallet.broadcasts.length, 0)
-  }
-})
-
-test('setting an over-long name (78) throws a length error and broadcasts nothing', async () => {
-  const wallet = fakeWallet()
-  const profiles = fakeProfiles()
-  const memoSetName = new MemoSetName({ wallet, profiles })
-
-  await assert.rejects(
-    memoSetName.setName('y'.repeat(78)),
-    (err) => err.code === 'name_length'
   )
   assert.equal(wallet.broadcasts.length, 0)
   assert.equal(profiles.getName(wallet.walletInfo.cashAddress), null)
