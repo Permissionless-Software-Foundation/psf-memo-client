@@ -26,6 +26,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "node --test \"test/unit/*.test.js\"",
+    "test:property": "node --test \"test/property/*.test.js\"",
     "test:acceptance": "node acceptance/acceptance.js",
     "eject": "react-scripts eject",
     "lint": "standard --env mocha --fix",
