@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom'
 // Local libraries
 import MemoSetName from '../../../services/memo-set-name'
 import SetNamePage from '../../../services/set-name-page'
+import { byteLength } from '../../../services/utf8'
 
 function SetName (props) {
   const { appData } = props
@@ -22,7 +23,7 @@ function SetName (props) {
   const [err, setErr] = useState('')
   const [settingName, setSettingName] = useState(false)
 
-  const remaining = maxBytes - Buffer.byteLength(input, 'utf8')
+  const remaining = maxBytes - byteLength(input)
 
   async function handleSubmit (event) {
     event.preventDefault()
