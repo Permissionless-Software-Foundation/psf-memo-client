@@ -2,27 +2,33 @@
   Project step handlers for the psf-memo-client acceptance pipeline.
 
   These handlers connect Gherkin step text to real project behavior
-  (src/services/memo-post.js and src/services/new-post.js), driving them
-  through small injected adapters (a fake wallet, a fake feed, and a fake
-  navigator) so the acceptance run is deterministic and offline.
+  (src/services/memo-post.js, src/services/new-post.js, src/services/memo-reply.js,
+  src/services/reply-thread-page.js, src/services/memo-set-name.js, and
+  src/services/set-name-page.js), driving them through small injected adapters
+  (a fake wallet, a fake feed, a fake thread, and a fake navigator) so the
+  acceptance run is deterministic and offline.
 
   Regex matching with placeholder-name capture is the default style: a single
   handler pattern captures the placeholder name (e.g. <message>) and fetches
   the example value from the scenario example store.
 
-  The handlers serve both specs/post-memo.feature and specs/memo-new.feature,
-  whose wording differs but which share the same underlying Memo post behavior.
+  The handlers serve specs/post-memo.feature, specs/memo-new.feature,
+  specs/reply-memo.feature, and specs/set-name.feature, whose wording differs
+  but which share the same underlying Memo action/page-controller behavior.
 */
 
 'use strict'
 
 const MemoPost = require('../../src/services/memo-post')
 const NewPostPage = require('../../src/services/new-post')
+const MemoReply = require('../../src/services/memo-reply')
+const ReplyThreadPage = require('../../src/services/reply-thread-page')
 const MemoSetName = require('../../src/services/memo-set-name')
 const SetNamePage = require('../../src/services/set-name-page')
 const AccountPage = require('../../src/services/account-page')
 
 const MEMO_POST_PREFIX = MemoPost.MEMO_POST_PREFIX
+const MEMO_REPLY_PREFIX = MemoReply.MEMO_REPLY_PREFIX
 const MEMO_SET_NAME_PREFIX = MemoSetName.MEMO_SET_NAME_PREFIX
 
 // A fake wallet exposing the minimal-slp-wallet adapter surface the app uses.
@@ -63,15 +69,29 @@ function makeProfiles () {
   }
 }
 
+// A fake thread store recording replies added to a post thread.
+function makeThread () {
+  const replies = []
+  return {
+    rootTxid: null,
+    replies,
+    addReply: (r) => replies.push(r)
+  }
+}
+
 // Fresh world/state object for a single scenario execution.
 function createWorld () {
   const wallet = makeWallet('')
   const feed = makeFeed()
   const memoPost = new MemoPost({ wallet, feed })
+  const thread = makeThread()
+  const memoReply = new MemoReply({ wallet, thread })
   const world = {
     wallet,
     feed,
+    thread,
     memoPost,
+    memoReply,
     currentPath: null,
     menuOpen: false
   }
@@ -82,6 +102,13 @@ function createWorld () {
     memoPost,
     navigate: (path) => { world.currentPath = path },
     menuLinks: []
+  })
+
+  // The Reply Thread Page controller wraps the memo reply behavior. It does
+  // not navigate on success so the user stays in the thread modal.
+  world.replyPage = new ReplyThreadPage({
+    memoReply,
+    navigate: () => {}
   })
 
   // The Set Name Page and Account Page controllers share a profile store so
@@ -99,6 +126,14 @@ function createWorld () {
   })
 
   return world
+}
+
+// Decode a raw reply payload into its parent txid (hex) and reply text.
+function decodeReplyPayload (raw) {
+  const buf = Buffer.from(raw)
+  const parentTxid = buf.slice(0, 32).toString('hex')
+  const text = buf.slice(32).toString('utf8')
+  return { parentTxid, text }
 }
 
 // Handler registry. Each entry: { pattern, run }.
@@ -214,6 +249,63 @@ const handlers = [
     }
   },
   {
+    name: 'open reply thread',
+    pattern: /^I open the thread for the post with txid (.+)$/,
+    run (m, example, world) {
+      const txid = m[1].trim()
+      world.thread.rootTxid = txid
+      world.replyPage.setParent(txid)
+    }
+  },
+  {
+    name: 'type reply text',
+    pattern: /^I type a reply with the text "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) {
+        throw new Error(`Missing example value for "${param}"`)
+      }
+      world.replyPage.setInput(example[param])
+      world.replyPage.setParent(world.thread.rootTxid)
+    }
+  },
+  {
+    name: 'type reply to nested reply',
+    pattern: /^I type a reply to the nested reply with the text "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) {
+        throw new Error(`Missing example value for "${param}"`)
+      }
+      world.replyPage.setInput(example[param])
+      if (!world.nestedTxid) {
+        throw new Error('No nested reply has been selected.')
+      }
+      world.replyPage.setParent(world.nestedTxid)
+    }
+  },
+  {
+    name: 'submit reply',
+    pattern: /^I submit the reply$/,
+    async run (m, example, world) {
+      await world.replyPage.submit()
+    }
+  },
+  {
+    name: 'thread shows nested reply',
+    pattern: /^the thread shows a nested reply with the txid (.+)$/,
+    run (m, example, world) {
+      const txid = m[1].trim()
+      world.nestedTxid = txid
+      world.thread.addReply({
+        txid,
+        address: 'someone-else',
+        text: 'nested reply',
+        parentTxid: world.thread.rootTxid
+      })
+    }
+  },
+  {
     name: 'click Set Name button',
     pattern: /^I click the Set Name button$/,
     run (m, example, world) {
@@ -251,6 +343,68 @@ const handlers = [
       }
       if (last.msg !== world.setNamePage.input) {
         throw new Error('Broadcast name text did not match the typed name.')
+      }
+    }
+  },
+  {
+    name: 'broadcasts OP_RETURN with Memo reply prefix',
+    pattern: /^(?:the wallet|the app) broadcasts an OP_RETURN transaction with the Memo reply prefix$/,
+    run (m, example, world) {
+      const broadcasts = world.wallet.broadcasts
+      if (!broadcasts.length) {
+        throw new Error('No OP_RETURN transaction was broadcast.')
+      }
+      const last = broadcasts[broadcasts.length - 1]
+      if (last.prefix !== MEMO_REPLY_PREFIX) {
+        throw new Error(`Expected Memo reply prefix ${MEMO_REPLY_PREFIX}, got "${last.prefix}".`)
+      }
+      const { parentTxid, text } = decodeReplyPayload(last.msg)
+      if (parentTxid !== world.replyPage.parentTxid) {
+        throw new Error('Broadcast parent txid did not match the expected reply target.')
+      }
+      if (text !== world.replyPage.input) {
+        throw new Error('Broadcast reply text did not match the typed reply.')
+      }
+    }
+  },
+  {
+    name: 'thread shows new reply from my address',
+    pattern: /^the thread shows a new reply from my address with the text "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      const expectedText = example[param]
+      const myAddress = world.wallet.walletInfo.cashAddress
+      const found = world.thread.replies.find(
+        (r) => r.text === expectedText && r.address === myAddress
+      )
+      if (!found) {
+        throw new Error(`Thread does not show the new reply with text "${expectedText}".`)
+      }
+    }
+  },
+  {
+    name: 'thread shows validation/length error',
+    pattern: /^the thread shows a (validation|length) error$/,
+    run (m, example, world) {
+      const kind = m[1]
+      const expectedCode = kind === 'validation' ? 'reply_validation' : 'reply_length'
+      if (world.replyPage.submitError !== expectedCode) {
+        throw new Error(`Expected ${expectedCode}, got ${world.replyPage.submitError}.`)
+      }
+    }
+  },
+  {
+    name: 'thread remaining byte count',
+    pattern: /^the thread shows a remaining byte count of <([A-Za-z0-9_]+)>$/,
+    run (m, example, world) {
+      const param = m[1]
+      const expected = parseInt(example[param], 10)
+      if (Number.isNaN(expected)) {
+        throw new Error(`Invalid expected count for "${param}".`)
+      }
+      const actual = world.replyPage.remainingCount()
+      if (actual !== expected) {
+        throw new Error(`Expected ${expected} remaining bytes, got ${actual}.`)
       }
     }
   },
