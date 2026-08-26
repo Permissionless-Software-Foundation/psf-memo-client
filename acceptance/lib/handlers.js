@@ -249,6 +249,52 @@ const handlers = [
     }
   },
   {
+    name: 'thread modal shows reply form',
+    pattern: /^the thread modal shows a reply form$/,
+    run (m, example, world) {
+      // The reply form is always considered visible once the thread is open.
+      if (!world.replyPage) {
+        throw new Error('No reply page is attached to the thread.')
+      }
+    }
+  },
+  {
+    name: 'post with txid has no replies',
+    pattern: /^a post with the txid (.+) has no replies$/,
+    run (m, example, world) {
+      const txid = m[1].trim()
+      world.thread.rootTxid = txid
+      world.replyPage.setParent(txid)
+      // A fresh thread store already has no replies.
+      if (world.thread.replies.length !== 0) {
+        throw new Error(`Expected post ${txid} to have no replies, but it has ${world.thread.replies.length}.`)
+      }
+    }
+  },
+  {
+    name: 'click comment icon on post',
+    pattern: /^I click the comment icon on the post with txid (.+)$/,
+    run (m, example, world) {
+      const txid = m[1].trim()
+      // Opening the thread modal means setting the active thread txid.
+      world.thread.rootTxid = txid
+      world.replyPage.setParent(txid)
+    }
+  },
+  {
+    name: 'thread modal opens for post',
+    pattern: /^the thread modal opens for the post with txid (.+)$/,
+    run (m, example, world) {
+      const txid = m[1].trim()
+      if (world.thread.rootTxid !== txid) {
+        throw new Error(`Expected thread modal to open for ${txid}, but current thread is ${world.thread.rootTxid}.`)
+      }
+      if (!world.replyPage) {
+        throw new Error('Thread modal opened without a reply form page.')
+      }
+    }
+  },
+  {
     name: 'open reply thread',
     pattern: /^I open the thread for the post with txid (.+)$/,
     run (m, example, world) {

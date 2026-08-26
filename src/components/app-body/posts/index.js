@@ -19,7 +19,8 @@ import '../../post-feed/post-feed.css'
 
 const PAGE_SIZE = 100
 
-function RecentPosts () {
+function RecentPosts (props) {
+  const { appData } = props
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [posts, setPosts] = useState([])
@@ -163,6 +164,8 @@ function RecentPosts () {
         show={showThreadModal}
         txid={threadTxid}
         onHide={closeThread}
+        wallet={appData?.wallet}
+        profiles={profiles}
       />
     </Container>
   )
