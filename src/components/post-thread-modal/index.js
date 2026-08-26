@@ -107,7 +107,7 @@ function PostThreadModal ({ show, txid, onHide, wallet, profiles: externalProfil
 
         {!loading && !error && thread && (
           <>
-            <PostThreadNode post={thread} profiles={profiles} isRoot />
+            <PostThreadNode post={thread} profiles={profiles} wallet={wallet} isRoot />
             <ReplyThreadForm
               parentTxid={txid}
               rootPost={thread}
@@ -120,6 +120,7 @@ function PostThreadModal ({ show, txid, onHide, wallet, profiles: externalProfil
                 key={reply.txid}
                 post={reply}
                 profiles={profiles}
+                wallet={wallet}
               />
             ))}
           </>

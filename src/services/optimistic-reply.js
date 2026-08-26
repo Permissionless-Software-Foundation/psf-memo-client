@@ -1,5 +1,4 @@
 
-
 // Build the optimistic reply object used by the reply form for immediate
 // thread rendering before the thread is refreshed from the network. This is a
 // pure data-shaping function so the reply object shape is unit-testable and

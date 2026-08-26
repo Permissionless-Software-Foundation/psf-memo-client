@@ -131,6 +131,7 @@ function RecentPosts (props) {
                   key={post.txid}
                   post={post}
                   profiles={profiles}
+                  wallet={appData?.wallet}
                   onReplyClick={() => openThread(post.txid)}
                   showFooterMeta
                 />

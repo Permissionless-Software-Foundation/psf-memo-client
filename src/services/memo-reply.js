@@ -18,6 +18,7 @@
 
 const MemoAction = require('./memo-action')
 const { byteLength } = require('./utf8')
+const { hexToBytes } = require('./hex')
 
 const MEMO_REPLY_PREFIX = '6d03'
 const MAX_REPLY_BYTES = 184
@@ -82,28 +83,12 @@ class MemoReply extends MemoAction {
 // Build the raw OP_RETURN message payload for a reply.
 // The protocol wire format is: <parent txid 32 bytes><reply text UTF-8 bytes>.
 function buildReplyPayload (parentTxid, message) {
-  const parentBytes = hexToBytes(parentTxid)
+  const parentBytes = hexToBytes(parentTxid, PARENT_TXID_BYTES, 'Parent txid')
   const textBytes = new TextEncoder().encode(message)
   const raw = new Uint8Array(parentBytes.length + textBytes.length)
   raw.set(parentBytes, 0)
   raw.set(textBytes, parentBytes.length)
   return raw
-}
-
-// Decode a 64-character hex transaction id into 32 raw bytes.
-function hexToBytes (hex) {
-  if (typeof hex !== 'string' || hex.length !== PARENT_TXID_BYTES * 2) {
-    throw new Error('Parent txid must be a 64-character hex string.')
-  }
-  const bytes = new Uint8Array(PARENT_TXID_BYTES)
-  for (let i = 0; i < hex.length; i += 2) {
-    const byte = parseInt(hex.substr(i, 2), 16)
-    if (Number.isNaN(byte)) {
-      throw new Error('Parent txid must be a valid hex string.')
-    }
-    bytes[i / 2] = byte
-  }
-  return bytes
 }
 
 MemoReply.MEMO_REPLY_PREFIX = MEMO_REPLY_PREFIX
