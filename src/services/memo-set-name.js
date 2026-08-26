@@ -16,65 +16,36 @@
     MAX_NAME_BYTES       : maximum allowed name length (77 bytes per memo.sv)
 */
 
+const MemoAction = require('./memo-action')
+
 const MEMO_SET_NAME_PREFIX = '6d01'
 const MAX_NAME_BYTES = 77
 
-class MemoSetName {
+class MemoSetName extends MemoAction {
   constructor (deps = {}) {
-    this.wallet = deps.wallet
+    super(deps)
     this.profiles = deps.profiles
+    this.prefix = MEMO_SET_NAME_PREFIX
+    this.walletRequiredMsg = 'Memo set name requires a wallet.'
+    this.lengthMessage = `Name is too long. Maximum is ${MAX_NAME_BYTES} bytes.`
+    this.emptyMessage = 'Name must not be empty.'
+    this.lengthCode = 'name_length'
+    this.validationCode = 'name_validation'
   }
 
-  // Validate a candidate name.
-  // Returns { ok: true } or { ok: false, type: 'validation' | 'length' }.
-  validate (name) {
-    if (typeof name !== 'string' || name.trim().length === 0) {
-      return { ok: false, type: 'validation' }
-    }
-
-    if (Buffer.byteLength(name, 'utf8') > MAX_NAME_BYTES) {
-      return { ok: false, type: 'length' }
-    }
-
-    return { ok: true }
+  // A name is over-length when it exceeds the byte limit.
+  isTooLong (name) {
+    return Buffer.byteLength(name, 'utf8') > MAX_NAME_BYTES
   }
 
   // Compose and broadcast a Memo set-name transaction for the given name.
   // Resolves with the transaction id, or rejects with a typed error.
   async setName (name) {
-    const check = this.validate(name)
-    this._throwIfInvalid(check)
-
-    if (!this.wallet) {
-      throw new Error('Memo set name requires a wallet.')
-    }
-
-    // Refresh the wallet's spendable UTXO store so the broadcast has inputs.
-    await this.wallet.getUtxos()
-
-    const txid = await this.wallet.sendOpReturn(name, MEMO_SET_NAME_PREFIX)
-
-    // Reflect the new name in the injected profile store once broadcast succeeds.
-    this._reflectName(name)
-
-    return txid
-  }
-
-  // Throw the appropriate typed error when a name fails validation.
-  _throwIfInvalid (check) {
-    if (check.ok) return
-
-    const err = new Error(
-      check.type === 'length'
-        ? `Name is too long. Maximum is ${MAX_NAME_BYTES} bytes.`
-        : 'Name must not be empty.'
-    )
-    err.code = check.type === 'length' ? 'name_length' : 'name_validation'
-    throw err
+    return this.broadcast(name)
   }
 
   // Record the new name on the injected profile store when one is present.
-  _reflectName (name) {
+  reflect (txid, name) {
     if (this.profiles && typeof this.profiles.setName === 'function') {
       this.profiles.setName(this.wallet.walletInfo.cashAddress, name)
     }

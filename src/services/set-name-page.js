@@ -13,26 +13,19 @@
   adapter boundaries.
 */
 
+const PageController = require('./page-controller')
 const MemoSetName = require('./memo-set-name')
 
 const SET_NAME_PATH = '/memo/set-name'
 const ACCOUNT_PATH = '/account'
 
-class SetNamePage {
+class SetNamePage extends PageController {
   constructor (deps = {}) {
+    super(deps)
     this.memoSetName = deps.memoSetName || null
-    this.navigate = deps.navigate || (() => {})
-
-    this.input = ''
-    this.submitError = null
-    this.broadcastError = null
     this.settingName = false
-  }
-
-  // Set the draft name and update the counter.
-  setInput (text) {
-    this.input = typeof text === 'string' ? text : ''
-    return this
+    this.successPath = ACCOUNT_PATH
+    this.validationCodes = ['name_validation', 'name_length']
   }
 
   // Bytes remaining before the name limit is reached.
@@ -40,40 +33,17 @@ class SetNamePage {
     return MemoSetName.MAX_NAME_BYTES - Buffer.byteLength(this.input, 'utf8')
   }
 
-  // Validate and broadcast the current draft name. On success, navigate to the
-  // account page. On failure, record the typed error and stay on the page.
-  // Resolves with a result object.
-  async submit () {
-    this.settingName = true
-    this.submitError = null
-    this.broadcastError = null
-
-    try {
-      if (!this.memoSetName) {
-        throw new Error('Set name requires a memo set-name handler.')
-      }
-
-      const txid = await this.memoSetName.setName(this.input)
-      this.navigate(ACCOUNT_PATH)
-      this.settingName = false
-      return { ok: true, txid }
-    } catch (err) {
-      return this._handleSubmitFailure(err)
-    }
+  // Set the in-flight setting-name flag.
+  _setBusy (value) {
+    this.settingName = value
   }
 
-  // Classify a submit failure, record the typed state, and return the failure
-  // result. Local validation failures set submitError; broadcast or handler
-  // failures surface the real error message via broadcastError.
-  _handleSubmitFailure (err) {
-    if (err.code === 'name_validation' || err.code === 'name_length') {
-      this.submitError = err.code
-    } else {
-      this.broadcastError = err.message || String(err)
-      this.submitError = 'broadcast'
+  // Run the memo set-name action for the current input.
+  async _perform (input) {
+    if (!this.memoSetName) {
+      throw new Error('Set name requires a memo set-name handler.')
     }
-    this.settingName = false
-    return { ok: false, error: this.submitError, message: this.broadcastError }
+    return this.memoSetName.setName(input)
   }
 }
 
