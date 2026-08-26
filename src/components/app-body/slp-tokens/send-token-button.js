@@ -105,14 +105,7 @@ function SendTokenButton ({ token, appData, refreshTokens }) {
   }
 
   // Load address from clipboard
-  const pasteFromClipboard = async () => {
-    try {
-      const address = await appData.appUtil.readFromClipboard()
-      setSendToAddress(address)
-    } catch (err) {
-      console.warn('Error pasting from clipboard: ', err)
-    }
-  }
+  const pasteFromClipboard = () => appData.appUtil.pasteFromClipboard(setSendToAddress)
 
   // Modal JSX
   const getModal = () => {

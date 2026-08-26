@@ -11,72 +11,51 @@ class MemoDb {
   }
 
   async getRecentProfiles ({ limit = 100, offset = 0 } = {}) {
-    try {
-      const result = await this.axios.get(`${config.backend}/profile/recent`, {
-        params: { limit, offset }
-      })
-
-      return result.data
-    } catch (err) {
-      console.error('Error in getRecentProfiles()')
-      throw err
-    }
+    return this.getRecent('/profile/recent', 'getRecentProfiles', { limit, offset })
   }
 
   async getRecentPosts ({ limit = 100, offset = 0 } = {}) {
+    return this.getRecent('/posts/recent', 'getRecentPosts', { limit, offset })
+  }
+
+  async getProfile (addr) {
+    return this.getLevelResource('profile', addr, 'getProfile')
+  }
+
+  async getProfilePic (addr) {
+    return this.getLevelResource('profilepic', addr, 'getProfilePic')
+  }
+
+  async getName (addr) {
+    return this.getLevelResource('name', addr, 'getName')
+  }
+
+  // GET a paginated 'recent' listing endpoint.
+  async getRecent (path, name, params) {
     try {
-      const result = await this.axios.get(`${config.backend}/posts/recent`, {
-        params: { limit, offset }
+      const result = await this.axios.get(`${config.backend}${path}`, {
+        params
       })
 
       return result.data
     } catch (err) {
-      console.error('Error in getRecentPosts()')
+      console.error(`Error in ${name}()`)
       throw err
     }
   }
 
-  async getProfile (addr) {
+  // GET a level endpoint that resolves an address. Returns null on 404.
+  async getLevelResource (endpoint, addr, name) {
     try {
       const result = await this.axios.get(
-        `${config.backend}/level/profile/${encodeURIComponent(addr)}`
+        `${config.backend}/level/${endpoint}/${encodeURIComponent(addr)}`
       )
       return result.data
     } catch (err) {
       if (err.response && err.response.status === 404) {
         return null
       }
-      console.error('Error in getProfile()')
-      throw err
-    }
-  }
-
-  async getProfilePic (addr) {
-    try {
-      const result = await this.axios.get(
-        `${config.backend}/level/profilepic/${encodeURIComponent(addr)}`
-      )
-      return result.data
-    } catch (err) {
-      if (err.response && err.response.status === 404) {
-        return null
-      }
-      console.error('Error in getProfilePic()')
-      throw err
-    }
-  }
-
-  async getName (addr) {
-    try {
-      const result = await this.axios.get(
-        `${config.backend}/level/name/${encodeURIComponent(addr)}`
-      )
-      return result.data
-    } catch (err) {
-      if (err.response && err.response.status === 404) {
-        return null
-      }
-      console.error('Error in getName()')
+      console.error(`Error in ${name}()`)
       throw err
     }
   }

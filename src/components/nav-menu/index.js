@@ -71,6 +71,14 @@ function NavMenu (props) {
             </NavLink>
 
             <NavLink
+              className={currentPath === '/posts/new' ? 'nav-link-active' : 'nav-link-inactive'}
+              to='/posts/new'
+              onClick={handleClickEvent}
+            >
+              New Post
+            </NavLink>
+
+            <NavLink
               className={currentPath === '/wallet' ? 'nav-link-active' : 'nav-link-inactive'}
               to='/wallet'
               onClick={handleClickEvent}
