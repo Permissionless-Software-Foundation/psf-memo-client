@@ -109,7 +109,7 @@ Saved (and updated) at `specs/feature-backlog.md`. memo protocol action bytes be
 **Tier P1 — Core social verbs (write + read) — do these next, in order:**
 1. ✅ Post a Memo (`0x6d02`) — DONE
 2. ✅ Set display name (`0x6d01`) — DONE
-3. Reply to a Memo (`0x6d03`) — **NEXT** (thread already renders; add reply broadcast)
+3. ✅ Reply to a Memo (`0x6d03`) — DONE (merged to `display-name` @ `93e96e7`)
    - **User-approved decisions (2026-08-26, from memo.cash UI review):**
      - Reply max = **184 bytes** (UTF-8 byte count, memo.cash `MaxSize.Reply`).
      - Reply form lives **inside the thread modal** (not inline in the feed).
@@ -118,6 +118,8 @@ Saved (and updated) at `specs/feature-backlog.md`. memo protocol action bytes be
      - Replicate the live `[remaining]` byte counter (turns red when over limit).
      - Update the thread **optimistically** after broadcast (no refresh).
      - Users can **reply to a reply** (nested), not just the root post.
+     - Implemented as `src/services/memo-reply.js` (prefix `6d03`) + `reply-thread-page.js`;
+       spec `specs/reply-memo.feature`; all unit + acceptance tests pass; build OK.
 4. Like / tip a Memo (`0x6d04`)
 5. Set profile text / bio (`0x6d05`)
 6. Set profile picture (`0x6d0a`)
@@ -277,8 +279,7 @@ At the end of each session, update this file:
 - Mark features completed in the backlog (§5).
 - Add any new gotchas to §10.
 - Note the current `feat1` HEAD commit.
-- State the next feature to work on (currently: **Reply to a Memo, `0x6d03`**).
+- State the next feature to work on (currently: **Like / tip a Memo, `0x6d04`**).
 
-Current `display-name` HEAD: `230618d` (Set Name buffer fix merged).
-Next feature: **Reply to a Memo, `0x6d03`** — spec decisions captured in §5; Gherkin
-not yet written; awaiting user approval before handoff to coder.
+Current `display-name` HEAD: `93e96e7` (Reply to a Memo merged).
+Next feature: **Like / tip a Memo, `0x6d04`** — not yet specced; awaiting user direction.

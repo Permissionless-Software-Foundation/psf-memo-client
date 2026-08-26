@@ -79,7 +79,7 @@ follower/following lists; name + profile + avatar joined into feed/profile respo
 
 1. **Post a Memo** — the primary verb; unblocks all others. ✅ DONE
 2. **Set display name** — makes the feed readable and gives identity. ✅ DONE
-3. **Reply to a Memo** — core conversation; extends the existing thread modal.
+3. **Reply to a Memo** — core conversation; extends the existing thread modal. ✅ DONE
    - **Decisions (2026-08-26, from memo.cash UI review):** reply max = **184 bytes**
      (UTF-8 byte count); reply form **inside the thread modal**; keep the existing
      comment-icon behavior (opens the thread modal); replicate the live `[remaining]`
