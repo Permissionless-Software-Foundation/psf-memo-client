@@ -37,14 +37,14 @@ function AppBody (props) {
   return (
     <>
       <Routes>
-        <Route path='/' element={<RecentPosts />} />
+        <Route path='/' element={<RecentPosts appData={appData} />} />
         <Route path='/balance' element={<GetBalance wallet={appData.wallet} />} />
         <Route path='/bch' element={<BchSend appData={appData} />} />
         <Route path='/wallet' element={<Wallet appData={appData} />} />
         <Route path='/slp-tokens' element={<SlpTokens appData={appData} />} />
         <Route path='/profile/recent' element={<RecentProfiles />} />
         <Route path='/profile/:addr' element={<Profile />} />
-        <Route path='/posts/recent' element={<RecentPosts />} />
+        <Route path='/posts/recent' element={<RecentPosts appData={appData} />} />
         <Route path='/posts/new' element={<NewPost appData={appData} />} />
         <Route path='/memo/set-name' element={<SetName appData={appData} />} />
         <Route path='/account' element={<Account appData={appData} />} />
