@@ -16,68 +16,39 @@
                        218 rejected)
 */
 
+const MemoAction = require('./memo-action')
+
 const MEMO_POST_PREFIX = '6d02'
 const MAX_MEMO_CHARS = 217
 
-class MemoPost {
+class MemoPost extends MemoAction {
+  static config = {
+    prefix: MEMO_POST_PREFIX,
+    walletRequiredMsg: 'Memo post requires a wallet.',
+    lengthMessage: `Memo is too long. Maximum is ${MAX_MEMO_CHARS} characters.`,
+    emptyMessage: 'Memo must not be empty.',
+    lengthCode: 'memo_length',
+    validationCode: 'memo_validation'
+  }
+
   constructor (deps = {}) {
-    this.wallet = deps.wallet
+    super(deps)
     this.feed = deps.feed
   }
 
-  // Validate a candidate memo message.
-  // Returns { ok: true } or { ok: false, type: 'validation' | 'length' }.
-  validate (message) {
-    if (typeof message !== 'string' || message.trim().length === 0) {
-      return { ok: false, type: 'validation' }
-    }
-
-    if (message.length > MAX_MEMO_CHARS) {
-      return { ok: false, type: 'length' }
-    }
-
-    return { ok: true }
+  // A memo is over-length when it exceeds the character limit.
+  isTooLong (message) {
+    return message.length > MAX_MEMO_CHARS
   }
 
   // Compose and broadcast a Memo post for the given message.
   // Resolves with the transaction id, or rejects with a typed error.
   async post (message) {
-    const check = this.validate(message)
-    this._throwIfInvalid(check)
-
-    if (!this.wallet) {
-      throw new Error('Memo post requires a wallet.')
-    }
-
-    // Refresh the wallet's spendable UTXO store so the broadcast has inputs.
-    await this.wallet.getUtxos()
-
-    // The wallet's public sendOpReturn(msg, prefix) resolves walletInfo and
-    // its own spendable UTXOs internally, so only the message and Memo post
-    // prefix are passed here.
-    const txid = await this.wallet.sendOpReturn(message, MEMO_POST_PREFIX)
-
-    // Reflect the new post in the feed once broadcast succeeds.
-    this._reflectPost(txid, message)
-
-    return txid
-  }
-
-  // Throw the appropriate typed error when a memo fails validation.
-  _throwIfInvalid (check) {
-    if (check.ok) return
-
-    const err = new Error(
-      check.type === 'length'
-        ? `Memo is too long. Maximum is ${MAX_MEMO_CHARS} characters.`
-        : 'Memo must not be empty.'
-    )
-    err.code = check.type === 'length' ? 'memo_length' : 'memo_validation'
-    throw err
+    return this.broadcast(message)
   }
 
   // Record the new post on the injected feed when one is present.
-  _reflectPost (txid, message) {
+  reflect (txid, message) {
     if (this.feed && typeof this.feed.addPost === 'function') {
       this.feed.addPost({
         txid,
@@ -94,5 +65,5 @@ MemoPost.MAX_MEMO_CHARS = MAX_MEMO_CHARS
 module.exports = MemoPost
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-26T00:06:35.333Z","module_hash":"600c2edb145b16db5e313a2911fe164a2c08731346f2a67f52bca18827d8081e","functions":[{"id":"func/MemoPost.constructor","name":"MemoPost.constructor","line":23,"end_line":26,"hash":"73596685cdf614a4aa3bb3ab2ee2eec1c080e41ef8c56053a521eb07ca5c7d48"},{"id":"func/MemoPost.validate","name":"MemoPost.validate","line":30,"end_line":40,"hash":"2e45fb32d480e36e04ac61c3fb414849d9daa640c5ac366ee1363be4c3903fd0"},{"id":"func/MemoPost.post","name":"MemoPost.post","line":44,"end_line":67,"hash":"6a817a7eceb24e9e4eb9689345ea3ef6456e8b872bff00a0587bddae8060ead2"},{"id":"func/MemoPost._throwIfInvalid","name":"MemoPost._throwIfInvalid","line":70,"end_line":80,"hash":"e01932c7c343519cc8dd52d3e29b695783c6cdb7e84368e193140827c26bb39c"},{"id":"func/MemoPost._reflectPost","name":"MemoPost._reflectPost","line":83,"end_line":91,"hash":"36e9b77ac19b8a0c598e02f438c3d2ac1f6b7495cf6e28d9546d064ce63f861a"}]}
+// {"version":1,"tested_at":"2026-08-26T11:41:52.322Z","module_hash":"ef34e1b3318b764dab099f693855e5f57704d60b2173e99c146bdbf34b6dd8c5","functions":[{"id":"func/MemoPost.constructor","name":"MemoPost.constructor","line":34,"end_line":37,"hash":"527e19b059e463a67be214a5c77c0ce4261ffadb58b9546b422be543c1df292d"},{"id":"func/MemoPost.isTooLong","name":"MemoPost.isTooLong","line":40,"end_line":42,"hash":"833f9f66eae849df0248d0c696c95c767a121b394b1c728bc3ec675668dff5de"},{"id":"func/MemoPost.post","name":"MemoPost.post","line":46,"end_line":48,"hash":"26d8e84b520fae1928f7f72215e6ed95f7219c14266c99b710e2af5373cb6faf"},{"id":"func/MemoPost.reflect","name":"MemoPost.reflect","line":51,"end_line":59,"hash":"87e2168a71309a572c60b63f382dd6f681cb28ed543090dbde399e29556cfcdf"}]}
 // mutate4javascript-manifest-end

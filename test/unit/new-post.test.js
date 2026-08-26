@@ -17,25 +17,11 @@ const assert = require('node:assert/strict')
 
 const MemoPost = require('../../src/services/memo-post')
 const NewPostPage = require('../../src/services/new-post')
+const { fakeWallet } = require('../helpers/fake-wallet')
+const { registerPageControllerTests, registerPageSubmitTests } = require('./page-controller-helpers')
+const { buildPage } = require('./page-build-helpers')
 
 const MAX = MemoPost.MAX_MEMO_CHARS // 217
-
-// A fake wallet recording broadcast attempts.
-function fakeWallet (cashAddress = 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d') {
-  const broadcasts = []
-  const wallet = {
-    walletInfo: { cashAddress },
-    utxos: [{ txid: 'utxo-fee' }],
-    getUtxos: async function () { return this.utxos },
-    sendOpReturn: async function (walletInfo, bchUtxos, msg, prefix) {
-      this.broadcasts.push({ walletInfo, bchUtxos, msg, prefix })
-      if (this.failWith) throw new Error(this.failWith)
-      return 'newpost-txid'
-    }
-  }
-  wallet.broadcasts = broadcasts
-  return wallet
-}
 
 function fakeFeed () {
   const posts = []
@@ -43,15 +29,17 @@ function fakeFeed () {
 }
 
 function build () {
-  const wallet = fakeWallet()
-  const feed = fakeFeed()
-  const memoPost = new MemoPost({ wallet, feed })
-  const navigations = []
-  const page = new NewPostPage({
-    memoPost,
-    navigate: (path) => navigations.push(path)
+  return buildPage({
+    Page: NewPostPage,
+    Action: MemoPost,
+    actionKey: 'memoPost',
+    storeKey: 'feed',
+    storeFactory: fakeFeed
   })
-  return { wallet, feed, memoPost, page, navigations }
+}
+
+function buildBarePage (navigations) {
+  return new NewPostPage({ navigate: (p) => navigations.push(p) })
 }
 
 test('NEW_POST_PATH and RECENT_FEED_PATH constants', () => {
@@ -82,54 +70,19 @@ test('the character counter reaches zero at the memo limit', () => {
   assert.equal(page.remainingCount(), 0)
 })
 
-test('posting a valid memo broadcasts the Memo post prefix and navigates to the feed', async () => {
-  const { wallet, feed, page, navigations } = build()
-  page.setInput('hello memo')
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, true)
-  // The page returns to an idle (not posting) state after success.
-  assert.equal(page.posting, false)
-  // Broadcast happened with the Memo post prefix and the exact message.
-  assert.equal(wallet.broadcasts.length, 1)
-  assert.equal(wallet.broadcasts[0].prefix, '6d02')
-  assert.equal(wallet.broadcasts[0].msg, 'hello memo')
-  // Navigated to the recent feed after posting.
-  assert.deepEqual(navigations, ['/posts/recent'])
-  // The feed reflects the new post from this address.
-  assert.equal(feed.posts.length, 1)
-  assert.equal(feed.posts[0].text, 'hello memo')
-})
-
-test('posting an empty memo is rejected with a validation error and nothing is broadcast', async () => {
-  const { wallet, feed, page, navigations } = build()
-  page.setInput('')
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, false)
-  assert.equal(result.error, 'memo_validation')
-  assert.equal(page.submitError, 'memo_validation')
-  assert.equal(page.posting, false)
-  assert.equal(wallet.broadcasts.length, 0)
-  assert.equal(feed.posts.length, 0)
-  assert.deepEqual(navigations, [])
-})
-
-test('posting an over-long memo is rejected with a length error and nothing is broadcast', async () => {
-  const { wallet, feed, page, navigations } = build()
-  page.setInput('y'.repeat(MAX + 1))
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, false)
-  assert.equal(result.error, 'memo_length')
-  assert.equal(page.submitError, 'memo_length')
-  assert.equal(page.posting, false)
-  assert.equal(wallet.broadcasts.length, 0)
-  assert.equal(feed.posts.length, 0)
-  assert.deepEqual(navigations, [])
+registerPageSubmitTests({
+  buildPage: build,
+  verb: 'posting',
+  label: 'memo',
+  busyFlag: 'posting',
+  prefix: '6d02',
+  validationCode: 'memo_validation',
+  lengthCode: 'memo_length',
+  MAX,
+  successPath: '/posts/recent',
+  assertBroadcastMsg: (broadcast) => assert.equal(broadcast.msg, 'hello memo'),
+  assertStore: (store) => assert.equal(store.posts[0].text, 'hello memo'),
+  assertStoreEmpty: (store) => assert.equal(store.posts.length, 0)
 })
 
 test('the new post page starts idle (not posting)', () => {
@@ -137,63 +90,11 @@ test('the new post page starts idle (not posting)', () => {
   assert.equal(page.posting, false)
 })
 
-test('posting is true while a submit is in flight and false once it settles', async () => {
-  const wallet = fakeWallet()
-  const feed = fakeFeed()
-
-  // Defer the broadcast so we can observe the in-flight posting state.
-  let resolveSend
-  wallet.sendOpReturn = async () => new Promise((resolve) => { resolveSend = resolve })
-  const page = new NewPostPage({
-    memoPost: new MemoPost({ wallet, feed }),
-    navigate: () => {}
-  })
-  page.setInput('hello memo')
-
-  assert.equal(page.posting, false)
-  const pending = page.submit()
-  assert.equal(page.posting, true)
-
-  // Yield until the async chain reaches the deferred sendOpReturn call.
-  await new Promise((resolve) => setImmediate(resolve))
-  assert.equal(typeof resolveSend, 'function')
-  resolveSend('in-flight-txid')
-  await pending
-  assert.equal(page.posting, false)
-})
-
-test('submitting without a memo post handler reports an error and does not navigate', async () => {
-  const navigations = []
-  const page = new NewPostPage({ navigate: (p) => navigations.push(p) })
-  page.setInput('hello')
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, false)
-  assert.deepEqual(navigations, [])
-})
-
-test('a failed broadcast surfaces the real error and does not navigate', async () => {
-  const wallet = fakeWallet()
-  const feed = fakeFeed()
-  wallet.failWith = 'BCH UTXO list is empty'
-  const navigations = []
-  const page = new NewPostPage({
-    memoPost: new MemoPost({ wallet, feed }),
-    navigate: (p) => navigations.push(p)
-  })
-  page.setInput('hello memo')
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, false)
-  assert.equal(page.submitError, 'broadcast')
-  assert.match(page.broadcastError, /BCH UTXO list is empty/)
-  // The broadcast was attempted (recorded) before it failed.
-  assert.equal(wallet.broadcasts.length, 1)
-  assert.equal(wallet.broadcasts[0].prefix, '6d02')
-  // The user stays on the page.
-  assert.deepEqual(navigations, [])
+registerPageControllerTests({
+  buildPage: build,
+  buildBarePage,
+  busyFlag: 'posting',
+  prefix: '6d02'
 })
 
 test('a failed broadcast surfaces a different real error message', async () => {

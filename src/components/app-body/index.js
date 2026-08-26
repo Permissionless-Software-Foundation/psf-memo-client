@@ -27,6 +27,8 @@ import RecentProfiles from './recent-profiles'
 import RecentPosts from './posts'
 import NewPost from './new-post'
 import Profile from './profile'
+import SetName from './set-name'
+import Account from './account'
 
 function AppBody (props) {
   // Dependency injection through props
@@ -44,6 +46,8 @@ function AppBody (props) {
         <Route path='/profile/:addr' element={<Profile />} />
         <Route path='/posts/recent' element={<RecentPosts />} />
         <Route path='/posts/new' element={<NewPost appData={appData} />} />
+        <Route path='/memo/set-name' element={<SetName appData={appData} />} />
+        <Route path='/account' element={<Account appData={appData} />} />
         <Route path='/placeholder2' element={<Placeholder2 />} />
         <Route path='/placeholder3' element={<Placeholder3 />} />
         <Route path='/servers' element={<ServerSelectView appData={appData} />} />

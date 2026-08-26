@@ -7,15 +7,24 @@ import { Modal, Spinner } from 'react-bootstrap'
 
 import MemoDb from '../../services/memo-db'
 import PostThreadNode from './post-thread-node'
+import ReplyThreadForm from './reply-thread-form'
 import { collectThreadAddrs, loadThreadProfiles } from './thread-profiles'
 import './post-thread-modal.css'
 import '../post-feed/post-feed.css'
 
-function PostThreadModal ({ show, txid, onHide }) {
+function PostThreadModal ({ show, txid, onHide, wallet, profiles: externalProfiles }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [thread, setThread] = useState(null)
   const [profiles, setProfiles] = useState({})
+  const [optimisticReplies, setOptimisticReplies] = useState([])
+
+  // Clear optimistic replies when the modal is hidden or the txid changes.
+  useEffect(() => {
+    if (!show) {
+      setOptimisticReplies([])
+    }
+  }, [show])
 
   useEffect(() => {
     if (!show || !txid) {
@@ -70,7 +79,12 @@ function PostThreadModal ({ show, txid, onHide }) {
     setThread(null)
     setProfiles({})
     setError(null)
+    setOptimisticReplies([])
     onHide()
+  }
+
+  const handleOptimisticReply = (reply) => {
+    setOptimisticReplies((prev) => [...prev, reply])
   }
 
   return (
@@ -92,7 +106,23 @@ function PostThreadModal ({ show, txid, onHide }) {
         )}
 
         {!loading && !error && thread && (
-          <PostThreadNode post={thread} profiles={profiles} isRoot />
+          <>
+            <PostThreadNode post={thread} profiles={profiles} isRoot />
+            <ReplyThreadForm
+              parentTxid={txid}
+              rootPost={thread}
+              wallet={wallet}
+              profiles={profiles}
+              onOptimisticReply={handleOptimisticReply}
+            />
+            {optimisticReplies.map((reply) => (
+              <PostThreadNode
+                key={reply.txid}
+                post={reply}
+                profiles={profiles}
+              />
+            ))}
+          </>
         )}
       </Modal.Body>
     </Modal>

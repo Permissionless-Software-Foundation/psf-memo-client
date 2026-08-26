@@ -1,5 +1,5 @@
 # acceptance-mutation-manifest-begin
-# {"version":1,"tested_at":"2026-08-26T00:08:35.176401424Z","feature_name":"Post a Memo","feature_path":"/home/trout/work/psf-memo-client/.worktrees/architect/specs/post-memo.feature","background_hash":"d7f1a31b7651301ec01bdea9c4c990f9a032ce179aa84f8d6a78595f8a476474","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Post a Memo - 2 an empty memo is rejected","scenario_hash":"4e6fea6fa5adbf7fe0eefdd9bc21a7027fe7312d2937a4fd68f1a1eb68d33a8d","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-08-25T23:22:52.631790256Z"}]}
+# {"version":1,"tested_at":"2026-08-26T04:22:56.345139893Z","feature_name":"Post a Memo","feature_path":"../../specs/post-memo.feature","background_hash":"d7f1a31b7651301ec01bdea9c4c990f9a032ce179aa84f8d6a78595f8a476474","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Post a Memo - 2 an empty memo is rejected","scenario_hash":"4e6fea6fa5adbf7fe0eefdd9bc21a7027fe7312d2937a4fd68f1a1eb68d33a8d","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-08-26T03:34:49.113519078Z"}]}
 # acceptance-mutation-manifest-end
 
 # Scenarios: Post a Memo - 1, Post a Memo - 2, Post a Memo - 3

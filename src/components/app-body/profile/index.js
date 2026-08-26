@@ -44,7 +44,8 @@ function ProfileAvatar ({ addr, profilePicUrl }) {
   )
 }
 
-function Profile () {
+function Profile (props) {
+  const { appData } = props
   const { addr: encodedAddr } = useParams()
   const addr = decodeURIComponent(encodedAddr || '')
 
@@ -56,6 +57,7 @@ function Profile () {
   const [pagination, setPagination] = useState(null)
   const [threadTxid, setThreadTxid] = useState(null)
   const [showThreadModal, setShowThreadModal] = useState(false)
+  const [profiles, setProfiles] = useState({})
 
   const openThread = (txid) => {
     setThreadTxid(txid)
@@ -84,6 +86,7 @@ function Profile () {
         setProfilePicUrl(profilePic?.url || null)
         setPosts(postsData.posts || [])
         setPagination(postsData.pagination || null)
+        setProfiles({}) // Future: load profile names for the post list.
       } catch (err) {
         setError(err.message || 'Failed to load profile')
       }
@@ -166,6 +169,8 @@ function Profile () {
         show={showThreadModal}
         txid={threadTxid}
         onHide={closeThread}
+        wallet={appData?.wallet}
+        profiles={profiles}
       />
     </Container>
   )

@@ -1,3 +1,25 @@
+.reply-thread-form {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #dee2e6;
+}
+
+.reply-thread-counter {
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.reply-thread-counter-over {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.reply-thread-error {
+  color: #dc3545;
+  margin: 0.5rem 0;
+}
+
 .post-thread-modal-body {
   max-height: 70vh;
 }
