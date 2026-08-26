@@ -2,7 +2,7 @@
 # {"version":1,"tested_at":"2026-08-26T00:08:15.433121898Z","feature_name":"New Post Page","feature_path":"/home/trout/work/psf-memo-client/.worktrees/architect/specs/memo-new.feature","background_hash":"e1d5f81f1ed083ac6934c429ca3cb4a0f8d4dac44c2eaa45c0960920bde2c017","implementation_hash":"unknown","scenarios":[{"index":1,"name":"New Post Page - 2 an empty memo is rejected on the new post page","scenario_hash":"ac70dcf123f435da2b8a6c4953b0b22b8e7a5a8a74291547b954cb562cf9f339","mutation_count":1,"result":{"Total":1,"Killed":1,"Survived":0,"Errors":0},"tested_at":"2026-08-26T00:08:15.433121898Z"}]}
 # acceptance-mutation-manifest-end
 
-# Scenarios: New Post Page - 1, New Post Page - 2, New Post Page - 3, New Post Page - 4, New Post Page - 5
+# Scenarios: New Post Page - 1, New Post Page - 2, New Post Page - 3, New Post Page - 4, New Post Page - 5, New Post Page - 6
 Feature: New Post Page
 
   Background:
@@ -59,3 +59,17 @@ Feature: New Post Page
   Scenario: New Post Page - 5 the navigation menu links to the new post page
     Given I open the navigation menu
     Then the menu shows a link to the path /posts/new
+
+  Scenario Outline: New Post Page - 6 a failed broadcast surfaces the real error and the user stays on the page
+    Given I navigate to the path /posts/new
+    And the wallet fails to broadcast with the error "<broadcast_error>"
+    When I type a memo with the text "<message>"
+    When I click the post button
+    Then the app attempts to broadcast an OP_RETURN transaction with the Memo post prefix
+    Then the new post page shows an error containing "<broadcast_error>"
+    Then I remain on the path /posts/new
+
+    Examples:
+      | message | broadcast_error |
+      | hello memo | BCH UTXO list is empty |
+      | hello memo | Insufficient balance |
