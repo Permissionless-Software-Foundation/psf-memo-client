@@ -14,14 +14,7 @@ const WalletImport = (props) => {
   const { appData } = props
 
   // Load mnemonic from clipboard
-  const pasteFromClipboard = async () => {
-    try {
-      const mnemonic = await appData.appUtil.readFromClipboard()
-      setNewMnemonic(mnemonic)
-    } catch (err) {
-      console.warn('Error pasting from clipboard: ', err)
-    }
-  }
+  const pasteFromClipboard = () => appData.appUtil.pasteFromClipboard(setNewMnemonic)
 
   // Handle input change for mnemonic
   const handleImportMnemonic = async (event) => {
