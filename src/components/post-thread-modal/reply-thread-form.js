@@ -15,6 +15,7 @@ import { Form, Button } from 'react-bootstrap'
 import MemoReply from '../../services/memo-reply'
 import ReplyThreadPage from '../../services/reply-thread-page'
 import { byteLength } from '../../services/utf8'
+import { buildOptimisticReply } from '../../services/optimistic-reply'
 
 function ReplyThreadForm ({ parentTxid, rootPost, wallet, profiles, onOptimisticReply }) {
   const maxBytes = MemoReply.MAX_REPLY_BYTES
@@ -42,16 +43,14 @@ function ReplyThreadForm ({ parentTxid, rootPost, wallet, profiles, onOptimistic
         if (typeof onOptimisticReply === 'function') {
           const cashAddress = wallet?.walletInfo?.cashAddress
           const displayName = profiles?.[cashAddress]?.name || null
-          onOptimisticReply({
+          onOptimisticReply(buildOptimisticReply({
             txid: result.txid,
             addr: cashAddress,
             text: input,
             seen: Date.now(),
             blockHeight: rootPost?.blockHeight,
-            replyCount: 0,
-            replies: [],
-            profile: displayName ? { name: displayName } : undefined
-          })
+            displayName
+          }))
         }
       } else {
         if (result.error === 'reply_length') {
