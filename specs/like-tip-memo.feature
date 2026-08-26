@@ -1,3 +1,7 @@
+# acceptance-mutation-manifest-begin
+# {"version":1,"tested_at":"2026-08-26T13:30:06.787347982Z","feature_name":"Like / Tip a Memo","feature_path":"/home/trout/work/psf-memo-client/.worktrees/architect/specs/like-tip-memo.feature","background_hash":"2cd08f817665556cd20cb9a69b0d96a8ad871a1a9c1929c9d7a56b41bb3eff64","implementation_hash":"unknown","scenarios":[{"index":1,"name":"Like / Tip a Memo - 2 a pure like broadcasts the Memo like action","scenario_hash":"95a91e98202ff0980db0f249b801ed10b6e885ce24756116f90ef5d35289aa9d","mutation_count":2,"result":{"Total":2,"Killed":2,"Survived":0,"Errors":0},"tested_at":"2026-08-26T13:30:06.787347982Z"},{"index":8,"name":"Like / Tip a Memo - 9 a user can like their own post","scenario_hash":"eec77e112d8aa86f9e8ff6b7e38634e0c252be14cb60c35974f71b07fead8fb5","mutation_count":2,"result":{"Total":2,"Killed":2,"Survived":0,"Errors":0},"tested_at":"2026-08-26T13:30:06.787347982Z"}]}
+# acceptance-mutation-manifest-end
+
 # Scenarios: Like / Tip a Memo - 1, Like / Tip a Memo - 2, Like / Tip a Memo - 3, Like / Tip a Memo - 4, Like / Tip a Memo - 5, Like / Tip a Memo - 6, Like / Tip a Memo - 7, Like / Tip a Memo - 8, Like / Tip a Memo - 9, Like / Tip a Memo - 10
 Feature: Like / Tip a Memo
 

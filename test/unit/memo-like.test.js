@@ -159,12 +159,54 @@ test('a tip above the hard maximum is rejected with a maximum error', async () =
   )
 })
 
+test('a tip at exactly the hard maximum is accepted', async () => {
+  const wallet = fakeWallet({
+    cashAddress: MY_ADDRESS,
+    utxos: [{ txid: 'u1', value: MemoLike.MAX_TIP_SATS + 1000 }]
+  })
+  const memoLike = new MemoLike({ wallet })
+
+  const txid = await memoLike.like(POST_TXID, MemoLike.MAX_TIP_SATS, AUTHOR_ADDRESS)
+
+  assert.equal(txid, 'fake-txid')
+  assert.equal(wallet.broadcasts.length, 1)
+  assert.deepEqual(wallet.broadcasts[0].bchOutput, [
+    { address: AUTHOR_ADDRESS, amountSat: MemoLike.MAX_TIP_SATS }
+  ])
+})
+
+test('a wallet with exactly the dust-limit balance can make a pure like', async () => {
+  const wallet = fakeWallet({
+    cashAddress: MY_ADDRESS,
+    utxos: [{ txid: 'u1', value: MemoLike.DUST_LIMIT_SATS }]
+  })
+  const memoLike = new MemoLike({ wallet })
+
+  const txid = await memoLike.like(POST_TXID, 0, AUTHOR_ADDRESS)
+
+  assert.equal(txid, 'fake-txid')
+  assert.equal(wallet.broadcasts.length, 1)
+})
+
 test('a tip above the spendable balance is rejected with a balance error', async () => {
   await assertLikeRejected(
     fakeWallet({ utxos: [{ txid: 'u1', value: 30000 }] }),
     35000,
     'like_balance'
   )
+})
+
+test('a tip at exactly the spendable balance is accepted', async () => {
+  const wallet = fakeWallet({
+    cashAddress: MY_ADDRESS,
+    utxos: [{ txid: 'u1', value: 25000 }]
+  })
+  const memoLike = new MemoLike({ wallet })
+
+  const txid = await memoLike.like(POST_TXID, 25000, AUTHOR_ADDRESS)
+
+  assert.equal(txid, 'fake-txid')
+  assert.equal(wallet.broadcasts.length, 1)
 })
 
 test('a wallet with zero spendable balance cannot like', async () => {
