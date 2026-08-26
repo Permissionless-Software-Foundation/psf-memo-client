@@ -1,4 +1,4 @@
-'use strict'
+
 
 // Build the optimistic reply object used by the reply form for immediate
 // thread rendering before the thread is refreshed from the network. This is a
