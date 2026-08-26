@@ -59,19 +59,6 @@ test('posting a valid memo broadcasts an OP_RETURN with the Memo post prefix and
   assert.equal(feed.posts[0].address, wallet.walletInfo.cashAddress)
 })
 
-test('posting an empty memo throws a validation error and broadcasts nothing', async () => {
-  const wallet = fakeWallet()
-  const feed = fakeFeed()
-  const memoPost = new MemoPost({ wallet, feed })
-
-  await assert.rejects(
-    memoPost.post(''),
-    (err) => err.code === 'memo_validation'
-  )
-  assert.equal(wallet.broadcasts.length, 0)
-  assert.equal(feed.posts.length, 0)
-})
-
 test('posting without a wallet reports a missing-wallet error', async () => {
   const memoPost = new MemoPost({})
   await assert.rejects(

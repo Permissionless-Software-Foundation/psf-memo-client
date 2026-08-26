@@ -33,7 +33,9 @@ class PageController {
 
     try {
       const txid = await this._perform(this.input)
-      this.navigate(this.successPath)
+      if (this.successPath) {
+        this.navigate(this.successPath)
+      }
       this._setBusy(false)
       return { ok: true, txid }
     } catch (err) {

@@ -63,7 +63,7 @@ action plus its read/display surface. This is the recommended first development 
 | # | Feature | Memo action | Write | Read surface |
 |---|---------|-------------|-------|--------------|
 | 1 | Post a Memo | `0x6d02` | Compose + `sendOpReturn` | Appears in recent feed & own profile after indexing |
-| 2 | Set display name | `0x6d01` | Broadcast name | Name shown on posts, profiles, feed |
+| 2 | Set display name | `0x6d01` | Broadcast name | Name shown on posts, profiles, feed | ✅ DONE |
 | 3 | Reply to a Memo | `0x6d03` | Broadcast reply to parent txid | Nested thread view |
 | 4 | Like a Memo | `0x6d04` | Broadcast like for a post txid | Like count + liked state on post |
 | 5 | Set profile text (bio) | `0x6d05` | Broadcast bio | Shown on profile page |
@@ -77,9 +77,14 @@ follower/following lists; name + profile + avatar joined into feed/profile respo
 
 ## Priority order within P1
 
-1. **Post a Memo** — the primary verb; unblocks all others.
-2. **Set display name** — makes the feed readable and gives identity.
+1. **Post a Memo** — the primary verb; unblocks all others. ✅ DONE
+2. **Set display name** — makes the feed readable and gives identity. ✅ DONE
 3. **Reply to a Memo** — core conversation; extends the existing thread modal.
+   - **Decisions (2026-08-26, from memo.cash UI review):** reply max = **184 bytes**
+     (UTF-8 byte count); reply form **inside the thread modal**; keep the existing
+     comment-icon behavior (opens the thread modal); replicate the live `[remaining]`
+     byte counter (turns red when over); update the thread **optimistically** after
+     broadcast; users can **reply to a reply** (nested).
 4. **Like a Memo** — social signal; needs like-count API.
 5. **Set profile text** — bio for the profile page.
 6. **Set profile picture** — avatar for posts/profiles.

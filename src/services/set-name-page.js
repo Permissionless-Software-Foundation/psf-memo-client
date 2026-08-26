@@ -15,6 +15,7 @@
 
 const PageController = require('./page-controller')
 const MemoSetName = require('./memo-set-name')
+const { byteLength } = require('./utf8')
 
 const SET_NAME_PATH = '/memo/set-name'
 const ACCOUNT_PATH = '/account'
@@ -30,7 +31,7 @@ class SetNamePage extends PageController {
 
   // Bytes remaining before the name limit is reached.
   remainingCount () {
-    return MemoSetName.MAX_NAME_BYTES - Buffer.byteLength(this.input, 'utf8')
+    return MemoSetName.MAX_NAME_BYTES - byteLength(this.input)
   }
 
   // Set the in-flight setting-name flag.
