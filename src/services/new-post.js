@@ -73,17 +73,22 @@ class NewPostPage {
       this.posting = false
       return { ok: true, txid }
     } catch (err) {
-      if (err.code === 'memo_validation' || err.code === 'memo_length') {
-        // Local validation failure: record the typed validation error.
-        this.submitError = err.code
-      } else {
-        // Broadcast (or handler) failure: surface the real error message.
-        this.broadcastError = err.message || String(err)
-        this.submitError = 'broadcast'
-      }
-      this.posting = false
-      return { ok: false, error: this.submitError, message: this.broadcastError }
+      return this._handleSubmitFailure(err)
     }
+  }
+
+  // Classify a submit failure, record the typed state, and return the failure
+  // result. Local validation failures set submitError; broadcast or handler
+  // failures surface the real error message via broadcastError.
+  _handleSubmitFailure (err) {
+    if (err.code === 'memo_validation' || err.code === 'memo_length') {
+      this.submitError = err.code
+    } else {
+      this.broadcastError = err.message || String(err)
+      this.submitError = 'broadcast'
+    }
+    this.posting = false
+    return { ok: false, error: this.submitError, message: this.broadcastError }
   }
 }
 
@@ -93,5 +98,5 @@ NewPostPage.RECENT_FEED_PATH = RECENT_FEED_PATH
 module.exports = NewPostPage
 
 // mutate4javascript-manifest-begin
-// {"version":1,"tested_at":"2026-08-26T00:07:51.843Z","module_hash":"469dfd90342f6bcacf5b89ed819620663e221e20832f6936c35c46f9681ebfdc","functions":[{"id":"func/NewPostPage.constructor","name":"NewPostPage.constructor","line":22,"end_line":33,"hash":"7c957fbaa2b8d4adb62c1bbf240749243696a68e71e7896aefdbb68437432cd8"},{"id":"func/NewPostPage.addMenuLink","name":"NewPostPage.addMenuLink","line":36,"end_line":39,"hash":"bac97164d2d70bfdb946c4d54e67983c43cad093bac558f1d169e1739ca97137"},{"id":"func/NewPostPage.hasMenuLink","name":"NewPostPage.hasMenuLink","line":42,"end_line":44,"hash":"7e1abf5d0833aaf3b3da3a024de9eb2b80da900b2930e832c7e92d77e0e50344"},{"id":"func/NewPostPage.setInput","name":"NewPostPage.setInput","line":47,"end_line":50,"hash":"595484662b7ca07ef5eef5cebbff06309242552d9b4d15687df02f260ba88244"},{"id":"func/NewPostPage.remainingCount","name":"NewPostPage.remainingCount","line":53,"end_line":55,"hash":"521ce4ed841f62099529b327f2245a9e94c09af2f67ed5d91839e52607bcea37"},{"id":"func/NewPostPage.submit","name":"NewPostPage.submit","line":59,"end_line":77,"hash":"f4ce743f5a4bb139615086165b25173641a9388af16b7527f2db243a1c6b596c"}]}
+// {"version":1,"tested_at":"2026-08-26T00:39:54.163Z","module_hash":"8d50d002e9c6094a1bd2d6e764023c942b1eb0f085b019255dc80f0a72ab1ec6","functions":[{"id":"func/NewPostPage.constructor","name":"NewPostPage.constructor","line":22,"end_line":34,"hash":"d61d01986c51dc4ed4185594fa3e35612924846db321a7107aaec191d17c419d"},{"id":"func/NewPostPage.addMenuLink","name":"NewPostPage.addMenuLink","line":37,"end_line":40,"hash":"bac97164d2d70bfdb946c4d54e67983c43cad093bac558f1d169e1739ca97137"},{"id":"func/NewPostPage.hasMenuLink","name":"NewPostPage.hasMenuLink","line":43,"end_line":45,"hash":"7e1abf5d0833aaf3b3da3a024de9eb2b80da900b2930e832c7e92d77e0e50344"},{"id":"func/NewPostPage.setInput","name":"NewPostPage.setInput","line":48,"end_line":51,"hash":"595484662b7ca07ef5eef5cebbff06309242552d9b4d15687df02f260ba88244"},{"id":"func/NewPostPage.remainingCount","name":"NewPostPage.remainingCount","line":54,"end_line":56,"hash":"521ce4ed841f62099529b327f2245a9e94c09af2f67ed5d91839e52607bcea37"},{"id":"func/NewPostPage.submit","name":"NewPostPage.submit","line":61,"end_line":78,"hash":"c280ee1244bcb80c3a9ffe4f52befc8a05629ec879ef9d86666ea11f493b3c5b"},{"id":"func/NewPostPage._handleSubmitFailure","name":"NewPostPage._handleSubmitFailure","line":83,"end_line":92,"hash":"b13d8cd6b48b1f42d72e0031cabcaa00bb78b813f42250517d711f0d6fb23126"}]}
 // mutate4javascript-manifest-end

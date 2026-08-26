@@ -210,3 +210,19 @@ test('a failed broadcast surfaces a different real error message', async () => {
   assert.equal(result.ok, false)
   assert.match(page.broadcastError, /Insufficient balance/)
 })
+
+test('a broadcast failure with an empty message falls back to a string form', async () => {
+  const wallet = fakeWallet()
+  // Throw an Error with an empty message so the message fallback path is exercised.
+  wallet.sendOpReturn = async () => { throw new Error('') }
+  const page = new NewPostPage({ memoPost: new MemoPost({ wallet }), navigate: () => {} })
+  page.setInput('hello memo')
+
+  const result = await page.submit()
+
+  assert.equal(result.ok, false)
+  assert.equal(page.submitError, 'broadcast')
+  // The real (string) error is surfaced even though the message was empty.
+  assert.equal(typeof page.broadcastError, 'string')
+  assert.ok(page.broadcastError.length > 0)
+})

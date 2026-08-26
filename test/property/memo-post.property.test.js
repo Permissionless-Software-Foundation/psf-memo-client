@@ -34,6 +34,25 @@ function buildPage () {
   })
 }
 
+// A fake wallet recording broadcast attempts; fails when failWith is set.
+function fakeWallet () {
+  const wallet = {
+    walletInfo: { cashAddress: 'bitcoincash:qqlrzp23w08434twmvr4fxw672whkjy0py26r63g3d' },
+    utxos: [{ txid: 'utxo-fee' }],
+    getUtxos: async function () { return this.utxos },
+    sendOpReturn: async function (walletInfo, bchUtxos, msg, prefix) {
+      if (this.failWith) throw new Error(this.failWith)
+      return 'prop-txid'
+    }
+  }
+  return wallet
+}
+
+function fakeFeed () {
+  const posts = []
+  return { posts, addPost: (p) => posts.push(p) }
+}
+
 test('memo validation: any non-blank string at or below the limit is valid', async () => {
   await forAll(
     (i) => {
@@ -108,5 +127,29 @@ test('menu link registration is idempotent', async () => {
       return page.menuLinks.filter((p) => p === path).length === 1
     },
     { label: 'menu link idempotence' }
+  )
+})
+
+test('a broadcast failure surfaces the error and never navigates', async () => {
+  await forAll(
+    (i) => ({ message: stringOf(1 + Math.floor(rng() * 40)), failWith: `boom-${i % 97}` }),
+    ({ message, failWith }) => {
+      const wallet = fakeWallet()
+      wallet.failWith = failWith
+      const navigations = []
+      const page = new NewPostPage({
+        memoPost: new MemoPost({ wallet, feed: fakeFeed() }),
+        navigate: (p) => navigations.push(p)
+      })
+      page.setInput(message)
+
+      return page.submit().then((result) => {
+        if (result.ok) return false
+        if (page.submitError !== 'broadcast') return false
+        if (!page.broadcastError || !page.broadcastError.includes('boom')) return false
+        return navigations.length === 0
+      })
+    },
+    { label: 'broadcast failure does not navigate' }
   )
 })
