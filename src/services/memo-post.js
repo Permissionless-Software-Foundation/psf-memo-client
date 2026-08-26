@@ -49,16 +49,13 @@ class MemoPost {
       throw new Error('Memo post requires a wallet.')
     }
 
-    // Spendable outputs used to pay the transaction fee.
-    const bchUtxos = await this.wallet.getUtxos()
+    // Refresh the wallet's spendable UTXO store so the broadcast has inputs.
+    await this.wallet.getUtxos()
 
-    // Broadcast the OP_RETURN transaction with the Memo post prefix.
-    const txid = await this.wallet.sendOpReturn(
-      this.wallet.walletInfo,
-      bchUtxos,
-      message,
-      MEMO_POST_PREFIX
-    )
+    // The wallet's public sendOpReturn(msg, prefix) resolves walletInfo and
+    // its own spendable UTXOs internally, so only the message and Memo post
+    // prefix are passed here.
+    const txid = await this.wallet.sendOpReturn(message, MEMO_POST_PREFIX)
 
     // Reflect the new post in the feed once broadcast succeeds.
     this._reflectPost(txid, message)
