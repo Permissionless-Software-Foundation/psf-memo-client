@@ -31,6 +31,23 @@ function build () {
   return { wallet, feed, memoLike, page }
 }
 
+// Build a page with the given wallet balance, submit a tip string, and assert
+// that the submit is rejected with the expected error code and message.
+async function assertTipRejected (utxos, tip, expectedCode, messageRe) {
+  const wallet = fakeWallet({ cashAddress: MY_ADDRESS, utxos })
+  const memoLike = new MemoLike({ wallet })
+  const page = new LikeTipPage({ memoLike })
+  page.open(POST_TXID, AUTHOR_ADDRESS)
+  page.setTip(tip)
+
+  const result = await page.submit()
+
+  assert.equal(result.ok, false)
+  assert.equal(result.error, expectedCode)
+  assert.match(page.broadcastError, messageRe)
+  assert.equal(wallet.broadcasts.length, 0)
+}
+
 test('opening the modal sets the target post and author', () => {
   const { page } = build()
 
@@ -118,30 +135,20 @@ test('submitting a like on a post authored by the wallet works without a tip', a
   assert.equal(wallet.broadcasts[0].prefix, '6d04')
 })
 
-test('submitting with a non-numeric tip is rejected', async () => {
-  const { wallet, page } = build()
-  page.open(POST_TXID, AUTHOR_ADDRESS)
-  page.setTip('abc')
+test('submitting with a non-numeric tip string is rejected', async () => {
+  for (const tip of ['abc', '1.5']) {
+    const { wallet, page } = build()
+    page.open(POST_TXID, AUTHOR_ADDRESS)
+    page.setTip(tip)
 
-  const result = await page.submit()
+    const result = await page.submit()
 
-  assert.equal(result.ok, false)
-  assert.equal(result.error, 'like_validation')
-  assert.equal(page.submitError, 'like_validation')
-  assert.match(page.broadcastError, /valid number/i)
-  assert.equal(wallet.broadcasts.length, 0)
-})
-
-test('submitting with a decimal tip string is rejected', async () => {
-  const { wallet, page } = build()
-  page.open(POST_TXID, AUTHOR_ADDRESS)
-  page.setTip('1.5')
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, false)
-  assert.equal(result.error, 'like_validation')
-  assert.equal(wallet.broadcasts.length, 0)
+    assert.equal(result.ok, false)
+    assert.equal(result.error, 'like_validation')
+    assert.equal(page.submitError, 'like_validation')
+    assert.match(page.broadcastError, /valid number/i)
+    assert.equal(wallet.broadcasts.length, 0)
+  }
 })
 
 test('submitting with a dust tip is rejected', async () => {
@@ -157,33 +164,21 @@ test('submitting with a dust tip is rejected', async () => {
 })
 
 test('submitting with a tip above the maximum is rejected', async () => {
-  const wallet = fakeWallet({ cashAddress: MY_ADDRESS, utxos: [{ txid: 'u1', value: 150000000 }] })
-  const memoLike = new MemoLike({ wallet })
-  const page = new LikeTipPage({ memoLike })
-  page.open(POST_TXID, AUTHOR_ADDRESS)
-  page.setTip('100000001')
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, false)
-  assert.equal(result.error, 'like_maximum')
-  assert.match(page.broadcastError, /maximum/i)
-  assert.equal(wallet.broadcasts.length, 0)
+  await assertTipRejected(
+    [{ txid: 'u1', value: 150000000 }],
+    '100000001',
+    'like_maximum',
+    /maximum/i
+  )
 })
 
 test('submitting with a tip above the spendable balance is rejected', async () => {
-  const wallet = fakeWallet({ cashAddress: MY_ADDRESS, utxos: [{ txid: 'u1', value: 30000 }] })
-  const memoLike = new MemoLike({ wallet })
-  const page = new LikeTipPage({ memoLike })
-  page.open(POST_TXID, AUTHOR_ADDRESS)
-  page.setTip('35000')
-
-  const result = await page.submit()
-
-  assert.equal(result.ok, false)
-  assert.equal(result.error, 'like_balance')
-  assert.match(page.broadcastError, /spendable/i)
-  assert.equal(wallet.broadcasts.length, 0)
+  await assertTipRejected(
+    [{ txid: 'u1', value: 30000 }],
+    '35000',
+    'like_balance',
+    /spendable/i
+  )
 })
 
 test('tipping flag is true while a submit is in flight and false once it settles', async () => {
@@ -227,4 +222,18 @@ test('a failed broadcast surfaces the real error', async () => {
   assert.equal(result.ok, false)
   assert.equal(page.submitError, 'broadcast')
   assert.match(page.broadcastError, /Insufficient balance/)
+})
+
+test('a submit failure with no error message surfaces the error name', async () => {
+  const wallet = fakeWallet({ cashAddress: MY_ADDRESS })
+  const memoLike = new MemoLike({ wallet })
+  memoLike.like = async () => { throw new Error('') }
+  const page = new LikeTipPage({ memoLike })
+  page.open(POST_TXID, AUTHOR_ADDRESS)
+
+  const result = await page.submit()
+
+  assert.equal(result.ok, false)
+  assert.equal(page.submitError, 'broadcast')
+  assert.equal(page.broadcastError, 'Error')
 })

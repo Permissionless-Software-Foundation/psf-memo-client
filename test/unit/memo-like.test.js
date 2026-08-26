@@ -35,9 +35,20 @@ function fakeFeed (posts = []) {
   }
 }
 
-// Decode a like payload back into a 64-character hex txid.
+// Decode a like payload back into the canonical 64-character hex txid.
 function decodeLikeTxid (raw) {
   return Buffer.from(raw).toString('hex')
+}
+
+// Assert that a like with the given post txid and tip rejects with a specific
+// error code and performs no broadcast.
+async function assertLikeRejected (wallet, tip, expectedCode, postTxid = POST_TXID) {
+  const memoLike = new MemoLike({ wallet })
+  await assert.rejects(
+    memoLike.like(postTxid, tip, AUTHOR_ADDRESS),
+    (err) => err.code === expectedCode
+  )
+  assert.equal(wallet.broadcasts.length, 0)
 }
 
 test('MEMO_LIKE_PREFIX is the Memo like action 0x6d04', () => {
@@ -105,71 +116,29 @@ test('liking without a wallet reports a missing-wallet error', async () => {
 })
 
 test('liking with an invalid post txid reports a clear validation error', async () => {
-  const wallet = fakeWallet()
-  const memoLike = new MemoLike({ wallet })
-
-  await assert.rejects(
-    memoLike.like('not-a-txid'),
-    (err) => err.code === 'like_validation'
-  )
-  assert.equal(wallet.broadcasts.length, 0)
+  await assertLikeRejected(fakeWallet(), 0, 'like_validation', 'not-a-txid')
 })
 
 test('liking with a wrong-length but valid-hex post txid is rejected', async () => {
-  const wallet = fakeWallet()
-  const memoLike = new MemoLike({ wallet })
-
-  await assert.rejects(
-    memoLike.like('a'.repeat(10)),
-    (err) => err.code === 'like_validation'
-  )
-  assert.equal(wallet.broadcasts.length, 0)
+  await assertLikeRejected(fakeWallet(), 0, 'like_validation', 'a'.repeat(10))
 })
 
 test('a non-integer tip like "1.5" is rejected with a validation error', async () => {
-  const wallet = fakeWallet()
-  const memoLike = new MemoLike({ wallet })
-
-  await assert.rejects(
-    memoLike.like(POST_TXID, 1.5, AUTHOR_ADDRESS),
-    (err) => err.code === 'like_validation'
-  )
-  assert.equal(wallet.broadcasts.length, 0)
+  await assertLikeRejected(fakeWallet(), 1.5, 'like_validation')
 })
 
 test('a non-numeric tip like "abc" is rejected with a validation error', async () => {
-  const wallet = fakeWallet()
-  const memoLike = new MemoLike({ wallet })
-
-  await assert.rejects(
-    memoLike.like(POST_TXID, NaN, AUTHOR_ADDRESS),
-    (err) => err.code === 'like_validation'
-  )
-  assert.equal(wallet.broadcasts.length, 0)
+  await assertLikeRejected(fakeWallet(), NaN, 'like_validation')
 })
 
 test('a negative tip is rejected with a validation error', async () => {
-  const wallet = fakeWallet()
-  const memoLike = new MemoLike({ wallet })
-
-  await assert.rejects(
-    memoLike.like(POST_TXID, -1, AUTHOR_ADDRESS),
-    (err) => err.code === 'like_validation'
-  )
-  assert.equal(wallet.broadcasts.length, 0)
+  await assertLikeRejected(fakeWallet(), -1, 'like_validation')
 })
 
 test('a tip below the dust limit is rejected with a dust error', async () => {
   const wallet = fakeWallet({ utxos: [{ txid: 'u1', value: 100000 }] })
-  const memoLike = new MemoLike({ wallet })
-
-  for (const tip of [1, 2999]) {
-    await assert.rejects(
-      memoLike.like(POST_TXID, tip, AUTHOR_ADDRESS),
-      (err) => err.code === 'like_dust'
-    )
-  }
-  assert.equal(wallet.broadcasts.length, 0)
+  await assertLikeRejected(wallet, 1, 'like_dust')
+  await assertLikeRejected(wallet, 2999, 'like_dust')
 })
 
 test('a tip at the dust limit is accepted', async () => {
@@ -183,47 +152,31 @@ test('a tip at the dust limit is accepted', async () => {
 })
 
 test('a tip above the hard maximum is rejected with a maximum error', async () => {
-  const wallet = fakeWallet({ utxos: [{ txid: 'u1', value: 150000000 }] })
-  const memoLike = new MemoLike({ wallet })
-
-  await assert.rejects(
-    memoLike.like(POST_TXID, 100000001, AUTHOR_ADDRESS),
-    (err) => err.code === 'like_maximum'
+  await assertLikeRejected(
+    fakeWallet({ utxos: [{ txid: 'u1', value: 150000000 }] }),
+    100000001,
+    'like_maximum'
   )
-  assert.equal(wallet.broadcasts.length, 0)
 })
 
 test('a tip above the spendable balance is rejected with a balance error', async () => {
-  const wallet = fakeWallet({ utxos: [{ txid: 'u1', value: 30000 }] })
-  const memoLike = new MemoLike({ wallet })
-
-  await assert.rejects(
-    memoLike.like(POST_TXID, 35000, AUTHOR_ADDRESS),
-    (err) => err.code === 'like_balance'
+  await assertLikeRejected(
+    fakeWallet({ utxos: [{ txid: 'u1', value: 30000 }] }),
+    35000,
+    'like_balance'
   )
-  assert.equal(wallet.broadcasts.length, 0)
 })
 
 test('a wallet with zero spendable balance cannot like', async () => {
-  const wallet = fakeWallet({ utxos: [] })
-  const memoLike = new MemoLike({ wallet })
-
-  await assert.rejects(
-    memoLike.like(POST_TXID, 0, AUTHOR_ADDRESS),
-    (err) => err.code === 'like_empty_balance'
-  )
-  assert.equal(wallet.broadcasts.length, 0)
+  await assertLikeRejected(fakeWallet({ utxos: [] }), 0, 'like_empty_balance')
 })
 
 test('a wallet with balance below the dust limit cannot like', async () => {
-  const wallet = fakeWallet({ utxos: [{ txid: 'u1', value: 2999 }] })
-  const memoLike = new MemoLike({ wallet })
-
-  await assert.rejects(
-    memoLike.like(POST_TXID, 0, AUTHOR_ADDRESS),
-    (err) => err.code === 'like_empty_balance'
+  await assertLikeRejected(
+    fakeWallet({ utxos: [{ txid: 'u1', value: 2999 }] }),
+    0,
+    'like_empty_balance'
   )
-  assert.equal(wallet.broadcasts.length, 0)
 })
 
 test('a pure like can be made on a post authored by the wallet address', async () => {
@@ -258,4 +211,10 @@ test('getSpendableSats tolerates common utxo value field names', () => {
   assert.equal(new MemoLike({ wallet: walletValue }).getSpendableSats(), 1000)
   assert.equal(new MemoLike({ wallet: walletSatoshis }).getSpendableSats(), 2000)
   assert.equal(new MemoLike({ wallet: walletAmount }).getSpendableSats(), 3000)
+})
+
+test('getSpendableSats returns 0 without a wallet or spendable values', () => {
+  assert.equal(new MemoLike({}).getSpendableSats(), 0)
+  assert.equal(new MemoLike({ wallet: { utxos: undefined } }).getSpendableSats(), 0)
+  assert.equal(new MemoLike({ wallet: { utxos: [{ txid: 'u1' }] } }).getSpendableSats(), 0)
 })

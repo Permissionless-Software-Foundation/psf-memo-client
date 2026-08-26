@@ -62,6 +62,19 @@ class MemoLike extends MemoAction {
   // Validate an optional tip amount against the dust limit, hard maximum, and
   // the wallet's spendable balance.
   validateTip (tipSats, spendableSats) {
+    this._validateTipAmount(tipSats)
+
+    if (tipSats > spendableSats) {
+      const err = new Error('Tip exceeds the spendable balance.')
+      err.code = 'like_balance'
+      throw err
+    }
+
+    return { ok: true }
+  }
+
+  // Validate the tip amount's integer-ness, dust floor, and hard maximum.
+  _validateTipAmount (tipSats) {
     if (!Number.isInteger(tipSats) || tipSats < 0) {
       const err = new Error('Tip must be a valid number of satoshis.')
       err.code = 'like_validation'
@@ -79,14 +92,6 @@ class MemoLike extends MemoAction {
       err.code = 'like_maximum'
       throw err
     }
-
-    if (tipSats > spendableSats) {
-      const err = new Error('Tip exceeds the spendable balance.')
-      err.code = 'like_balance'
-      throw err
-    }
-
-    return { ok: true }
   }
 
   // Sum the wallet's spendable UTXOs. Tolerates the common value field names
@@ -121,17 +126,10 @@ class MemoLike extends MemoAction {
     }
 
     this.validateTip(tipSats, spendable)
-
-    if (tipSats > 0 && (!authorAddress || typeof authorAddress !== 'string')) {
-      const err = new Error('Tip requires an author address.')
-      err.code = 'like_validation'
-      throw err
-    }
+    this._requireTipAddress(tipSats, authorAddress)
 
     const raw = hexToBytes(postTxid, PARENT_TXID_BYTES, 'Post txid')
-    const bchOutput = tipSats > 0
-      ? [{ address: authorAddress, amountSat: tipSats }]
-      : []
+    const bchOutput = this._buildTipOutput(tipSats, authorAddress)
 
     const txid = await this.wallet.sendOpReturn(raw, this.prefix, bchOutput)
 
@@ -142,6 +140,28 @@ class MemoLike extends MemoAction {
 
   // Record the new like on the injected feed when one is present.
   reflect (txid, postTxid, tipSats) {
+    this._notifyFeed(txid, postTxid, tipSats)
+    this._incrementPostCount(postTxid)
+  }
+
+  // Require an author address whenever a tip is present.
+  _requireTipAddress (tipSats, authorAddress) {
+    if (tipSats <= 0) return
+    if (typeof authorAddress === 'string' && authorAddress.length > 0) return
+    const err = new Error('Tip requires an author address.')
+    err.code = 'like_validation'
+    throw err
+  }
+
+  // Build the optional BCH tip output for the transaction.
+  _buildTipOutput (tipSats, authorAddress) {
+    return tipSats > 0
+      ? [{ address: authorAddress, amountSat: tipSats }]
+      : []
+  }
+
+  // Notify the feed store of the new like when it exposes addLike.
+  _notifyFeed (txid, postTxid, tipSats) {
     if (this.feed && typeof this.feed.addLike === 'function') {
       this.feed.addLike({
         txid,
@@ -150,12 +170,14 @@ class MemoLike extends MemoAction {
         tipSats
       })
     }
+  }
 
-    if (this.feed && Array.isArray(this.feed.posts)) {
-      const post = this.feed.posts.find((p) => p.txid === postTxid)
-      if (post) {
-        post.likeCount = (post.likeCount || 0) + 1
-      }
+  // Increment the liked post's counter on the feed store when it is present.
+  _incrementPostCount (postTxid) {
+    if (!this.feed || !Array.isArray(this.feed.posts)) return
+    const post = this.feed.posts.find((p) => p.txid === postTxid)
+    if (post) {
+      post.likeCount = (post.likeCount || 0) + 1
     }
   }
 }
