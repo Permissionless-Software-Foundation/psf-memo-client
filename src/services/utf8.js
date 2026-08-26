@@ -13,3 +13,7 @@ function byteLength (str) {
 }
 
 module.exports = { byteLength }
+
+// mutate4javascript-manifest-begin
+// {"version":1,"tested_at":"2026-08-26T04:22:38.473Z","module_hash":"7f91541c49f2b6f421e8d4158bfe808b35a5449534cb26c567162fce6fec64bf","functions":[{"id":"func/byteLength","name":"byteLength","line":11,"end_line":13,"hash":"973c9dadcd1d8bbd53587252443880db13c8be3639fa74ce3c69a08ea358c8e2"}]}
+// mutate4javascript-manifest-end

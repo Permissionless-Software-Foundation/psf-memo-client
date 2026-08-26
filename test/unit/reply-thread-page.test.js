@@ -16,6 +16,7 @@ const assert = require('node:assert/strict')
 
 const MemoReply = require('../../src/services/memo-reply')
 const ReplyThreadPage = require('../../src/services/reply-thread-page')
+const { fakeWallet } = require('../helpers/fake-wallet')
 const { registerPageControllerTests, registerPageSubmitTests } = require('./page-controller-helpers')
 const { buildPage } = require('./page-build-helpers')
 
@@ -110,4 +111,23 @@ test('replying to a nested reply uses the selected parent txid', async () => {
   assert.equal(result.ok, true)
   assert.equal(store.replies[0].parentTxid, nestedTxid)
   assert.equal(store.replies[0].text, 'hello nested')
+})
+
+test('the reply page navigates to a configured success path on success', async () => {
+  const wallet = fakeWallet()
+  const thread = fakeThread()
+  const memoReply = new MemoReply({ wallet, thread })
+  const navigations = []
+  const page = new ReplyThreadPage({
+    memoReply,
+    navigate: (p) => navigations.push(p),
+    successPath: '/custom-path',
+    parentTxid: PARENT_TXID
+  })
+  page.setInput('hello memo')
+
+  const result = await page.submit()
+
+  assert.equal(result.ok, true)
+  assert.deepEqual(navigations, ['/custom-path'])
 })

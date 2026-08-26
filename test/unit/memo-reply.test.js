@@ -101,3 +101,15 @@ test('replying with an invalid parent txid reports a clear error', async () => {
   )
   assert.equal(wallet.broadcasts.length, 0)
 })
+
+test('replying with a wrong-length but valid-hex parent txid is rejected', async () => {
+  const wallet = fakeWallet()
+  const memoReply = new MemoReply({ wallet })
+
+  // 10 hex characters are valid hex but not the required 64-character txid.
+  await assert.rejects(
+    memoReply.reply('hello memo', 'a'.repeat(10)),
+    (err) => /64-character hex/i.test(err.message)
+  )
+  assert.equal(wallet.broadcasts.length, 0)
+})
