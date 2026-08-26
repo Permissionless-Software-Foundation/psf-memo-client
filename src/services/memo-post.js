@@ -16,8 +16,6 @@
                        218 rejected)
 */
 
-'use strict'
-
 const MEMO_POST_PREFIX = '6d02'
 const MAX_MEMO_CHARS = 217
 

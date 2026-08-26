@@ -25,6 +25,7 @@ import ServerSelectView from './configuration/select-server-view'
 import UserDataReview from './user-data-review'
 import RecentProfiles from './recent-profiles'
 import RecentPosts from './posts'
+import NewPost from './new-post'
 import Profile from './profile'
 
 function AppBody (props) {
@@ -42,6 +43,7 @@ function AppBody (props) {
         <Route path='/profile/recent' element={<RecentProfiles />} />
         <Route path='/profile/:addr' element={<Profile />} />
         <Route path='/posts/recent' element={<RecentPosts />} />
+        <Route path='/posts/new' element={<NewPost appData={appData} />} />
         <Route path='/placeholder2' element={<Placeholder2 />} />
         <Route path='/placeholder3' element={<Placeholder3 />} />
         <Route path='/servers' element={<ServerSelectView appData={appData} />} />
