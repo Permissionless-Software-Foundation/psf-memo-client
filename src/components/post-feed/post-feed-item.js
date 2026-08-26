@@ -31,11 +31,13 @@ function PostFeedItem ({
   showLikeButton = true,
   embedded = false
 }) {
-  if (!post) return null
-
+  // React hooks must be called unconditionally before any early return, so
+  // declare the like state first and guard the post access after.
   const [liked, setLiked] = useState(false)
-  const [likeCount, setLikeCount] = useState(post.likeCount || 0)
+  const [likeCount, setLikeCount] = useState(post?.likeCount || 0)
   const [showLikeModal, setShowLikeModal] = useState(false)
+
+  if (!post) return null
 
   const displayName = getDisplayName(post.addr, profiles)
 
