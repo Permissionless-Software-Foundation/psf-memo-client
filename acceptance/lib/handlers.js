@@ -31,7 +31,9 @@ function makeWallet (address) {
       return this.utxos
     },
     sendOpReturn: async function (walletInfo, bchUtxos, msg, prefix) {
+      // Record the broadcast attempt, then fail if configured to do so.
       this.broadcasts.push({ walletInfo, bchUtxos, msg, prefix })
+      if (this.failWith) throw new Error(this.failWith)
       return 'aa'.repeat(32)
     }
   }
@@ -96,6 +98,17 @@ const handlers = [
     }
   },
   {
+    name: 'wallet fails to broadcast with error',
+    pattern: /^the wallet fails to broadcast with the error "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      if (!(param in example)) {
+        throw new Error(`Missing example value for "${param}"`)
+      }
+      world.wallet.failWith = example[param]
+    }
+  },
+  {
     name: 'navigate to path',
     pattern: /^I navigate to the path (.+)$/,
     run (m, example, world, step) {
@@ -106,6 +119,16 @@ const handlers = [
         }
       } else {
         world.currentPath = target
+      }
+    }
+  },
+  {
+    name: 'remain on path',
+    pattern: /^I remain on the path (.+)$/,
+    run (m, example, world) {
+      const target = m[1].trim()
+      if (world.currentPath !== target) {
+        throw new Error(`Expected to remain on path ${target}, but current path is ${world.currentPath}.`)
       }
     }
   },
@@ -145,8 +168,8 @@ const handlers = [
     }
   },
   {
-    name: 'broadcasts OP_RETURN with Memo post prefix',
-    pattern: /^(?:the wallet|the app) broadcasts an OP_RETURN transaction with the Memo post prefix$/,
+    name: 'broadcasts/attempts OP_RETURN with Memo post prefix',
+    pattern: /^(?:the wallet|the app) (?:broadcasts|attempts to broadcast) an OP_RETURN transaction with the Memo post prefix$/,
     run (m, example, world) {
       const broadcasts = world.wallet.broadcasts
       if (!broadcasts.length) {
@@ -173,6 +196,18 @@ const handlers = [
       )
       if (!found) {
         throw new Error(`Feed does not show the new post with text "${expectedText}".`)
+      }
+    }
+  },
+  {
+    name: 'page shows error containing text',
+    pattern: /^the new post page shows an error containing "<([A-Za-z0-9_]+)>"$/,
+    run (m, example, world) {
+      const param = m[1]
+      const expected = example[param]
+      const actual = world.newPage.broadcastError || ''
+      if (!actual.includes(expected)) {
+        throw new Error(`Expected an error containing "${expected}", got "${actual}".`)
       }
     }
   },

@@ -36,11 +36,15 @@ function NewPost (props) {
 
       const result = await page.submit()
       if (!result.ok) {
-        setErr(
-          result.error === 'memo_length'
-            ? `Memo is too long. Maximum is ${maxChars} characters.`
-            : 'Memo must not be empty.'
-        )
+        if (result.error === 'memo_length') {
+          setErr(`Memo is too long. Maximum is ${maxChars} characters.`)
+        } else if (result.error === 'memo_validation') {
+          setErr('Memo must not be empty.')
+        } else if (result.message) {
+          setErr(`Failed to broadcast: ${result.message}`)
+        } else {
+          setErr('Failed to post memo.')
+        }
       }
       // On success page.submit() navigated to the recent feed.
     } catch (submitErr) {
