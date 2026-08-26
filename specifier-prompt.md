@@ -104,12 +104,12 @@ Saved (and updated) at `specs/feature-backlog.md`. memo protocol action bytes be
 
 **Completed ✓ (merged to `feat1`):**
 - Post a Memo (`0x6d02`) — service + `/posts/new` page + broadcast fix. FULLY DONE.
+- Set display name (`0x6d01`) — `/account` + `/memo/set-name` pages, byte counter (77 bytes). DONE.
 
 **Tier P1 — Core social verbs (write + read) — do these next, in order:**
 1. ✅ Post a Memo (`0x6d02`) — DONE
-2. Set display name (`0x6d01`) — **NEXT** (breadcrumb: the feed already renders
-   display names; the write action is missing)
-3. Reply to a Memo (`0x6d03`) — thread already renders; add reply broadcast
+2. ✅ Set display name (`0x6d01`) — DONE
+3. Reply to a Memo (`0x6d03`) — **NEXT** (thread already renders; add reply broadcast)
 4. Like / tip a Memo (`0x6d04`)
 5. Set profile text / bio (`0x6d05`)
 6. Set profile picture (`0x6d0a`)
@@ -228,9 +228,10 @@ specing reply/like/follow.
    (`Failed to broadcast: <msg>`). Keep that behavior in specs.
 6. **memo.cash pages are behind Cloudflare** — `/memo/new` etc. are hard to scrape; rely
    on user-provided behavior details and the protocol spec.
-7. **Byte vs char:** the 217 limit and the counter currently count characters
-   (`input.length`, UTF-16), not bytes. The user is aware; multi-byte unicode may
-   diverge. Ask/decide per feature.
+7. **Byte vs char:** the 217 post limit and its counter count characters (`input.length`,
+   UTF-16), not bytes. The user is aware; multi-byte unicode may diverge. **Set Name
+   (`0x6d01`) uses BYTE counting (77 bytes) for memo.cash parity** — its byte counter and
+   length check use UTF-8 byte length. Ask/decide per feature.
 8. **Live backend for e2e:** `https://memo-api.fullstackcash.net/` (prod memo-db). The
    user can provide BCH for real broadcasts.
 
@@ -256,4 +257,6 @@ At the end of each session, update this file:
 - Mark features completed in the backlog (§5).
 - Add any new gotchas to §10.
 - Note the current `feat1` HEAD commit.
-- State the next feature to work on (currently: **Set display name, `0x6d01`**).
+- State the next feature to work on (currently: **Reply to a Memo, `0x6d03`**).
+
+Current `display-name` HEAD: `9caff9c` (Set Name feature merged).
